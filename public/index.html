@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GPTDaddy</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">CODEX DESKTOP COMPANION</p>
+      <h1>GPTDaddy</h1>
+    </div>
+    <div id="connection" class="status-pill">正在连接</div>
+  </header>
+  <main>
+    <section class="hero">
+      <div>
+        <h2>让壁纸留在窗口里，<br>而不是留在上一段对话里。</h2>
+        <p id="summary">正在读取 Codex 与 Wallpaper Engine 状态…</p>
+      </div>
+      <div class="hero-actions">
+        <button id="resume" class="primary">继续播放</button>
+        <button id="pause">暂停</button>
+        <button id="remove" class="danger">恢复原界面</button>
+      </div>
+    </section>
+
+    <section class="settings panel">
+      <div class="section-heading">
+        <div><span>实时调整</span><h3>画面与可读性</h3></div>
+        <button id="save-settings">应用设置</button>
+      </div>
+      <div class="controls">
+        <div class="font-color-control">字体颜色
+          <span><input id="font-color" type="color" value="#18334f" aria-label="自定义字体颜色"><label><input id="font-color-auto" type="checkbox" checked> 自动跟随 Codex</label></span>
+        </div>
+        <label>面板透明度 <output id="opacity-output"></output><input id="opacity" type="range" min="10" max="100" value="72"></label>
+        <label>背景遮罩 <output id="scrim-output"></output><input id="scrim" type="range" min="0" max="90" value="20"></label>
+        <label>背景模糊 <output id="blur-output"></output><input id="blur" type="range" min="0" max="40" value="12"></label>
+        <label>画面缩放 <output id="zoom-output"></output><input id="zoom" type="range" min="50" max="200" value="100"></label>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-heading library-heading">
+        <div><span>WALLPAPER ENGINE</span><h3>壁纸库</h3></div>
+        <input id="search" type="search" placeholder="搜索标题或标签">
+      </div>
+      <div id="wallpapers" class="wallpaper-grid"></div>
+    </section>
+  </main>
+  <div id="toast" role="status"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+node_modules/
+coverage/
+dist/
+work/
+*.log
+.gptdaddy-test/
+
