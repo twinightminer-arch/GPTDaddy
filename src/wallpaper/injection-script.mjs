@@ -2,7 +2,7 @@ import { buildInappPanelScript } from './inapp-panel.mjs';
 
 async function installWallpaperHost(initialConfig) {
   const GLOBAL_KEY = '__gptDaddyWallpaperControllerV1';
-  const CONTROLLER_VERSION = '0.2.0';
+  const CONTROLLER_VERSION = String(initialConfig.pluginVersion || 'development');
   const HOST_ID = 'gptdaddy-wallpaper-host';
   const STYLE_ID = 'gptdaddy-wallpaper-style';
 

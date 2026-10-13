@@ -1,17 +1,22 @@
 # GPTDaddy
 
 GPTDaddy is a Windows companion for the official OpenAI Codex desktop app. The
-current milestone focuses on a persistent Wallpaper Engine video background,
-safe target discovery, local state recovery, and frame-level freeze detection.
+current 0.2.1 milestone adds local wallpaper imports, cached startup, and theme
+controls to a persistent Wallpaper Engine background.
 
 This is a **preview**, not a finished native-startup wallpaper plugin. A
-verified one-time package activation restored the wallpaper without adding a
-second taskbar icon. Automatic recovery from all ordinary launch entries and
-the native startup screen still require real-machine acceptance testing.
+verified package activation restored the wallpaper without adding a second
+taskbar icon. Automatic recovery has been observed on this machine, but the
+native startup splash appears before CDP attachment and cannot yet be styled.
 
 ## Current MVP
 
 - Discovers Wallpaper Engine projects from Steam libraries.
+- Caches the last successful Wallpaper Engine index and scans updates in a
+  background worker so the control panel does not wait for a full scan.
+- Imports PNG, JPEG, WebP, BMP, GIF and supported video files into a separate
+  managed directory without moving or deleting the originals. Imported items
+  can be previewed, renamed, made the default, or removed.
 - Transfers MP4/WebM media to the renderer through an already-authorized CDP session;
   the loopback range server remains available for future supported transport paths.
 - Injects one persistent, idempotent wallpaper host into the exact Codex main-page CDP target.
@@ -32,6 +37,9 @@ the native startup screen still require real-machine acceptance testing.
 - Allows a separately saved composer background color (white by default), with
   a Codex-original-color switch. The add menu and permissions menu use the same
   opaque color, with a contrast fallback for text on light backgrounds.
+- Gives the full-access confirmation dialog an opaque composer-colored surface
+  and contrasting text, without changing Codex permission settings.
+- Saves a separate GPTDaddy control-panel background color across its pages.
 - Applies the saved background color to the verified profile menu and editor,
   keeps the new-chat composer surface continuous, and removes the opaque
   settings cards and Library/Plugins/Skills header strips seen in the tested
@@ -94,11 +102,18 @@ This project is independent of those repositories and of OpenAI. Their names,
 authors, original links and license information are also recorded in
 `THIRD_PARTY_NOTICES.md`.
 
-## Preview archive
+## Windows packages
 
-On Windows with PowerShell and Node.js 22 or newer, run
-`npm run package:windows` to create `dist/GPTDaddy-0.1.0-windows-node22.zip`.
-The ZIP contains the application source and runtime launch scripts, not a
-self-contained executable. It excludes local state, Steam media, tests and
-audit screenshots. Install the user-level startup entry only after reviewing
-the limitations above and the `scripts/install-user-startup.ps1` script.
+`GPTDaddy-0.2.1-Setup.exe` installs a bundled Node runtime and registers the
+per-user GPTDaddy daemon for Windows sign-in. It adds only GPTDaddy control-panel
+shortcuts; it does not replace or unpin the official Codex shortcut.
+`GPTDaddy-0.2.1-Portable.zip` contains the same runtime for manual use.
+Both use `%LOCALAPPDATA%\GPTDaddy` for settings and imported media, separate
+from the installation directory, so an update does not erase those files.
+
+To build from source, run `npm ci`, then `scripts/build-windows.ps1`,
+`scripts/package-portable.ps1`, and `scripts/build-installer.ps1` on Windows.
+The installer requires Inno Setup 6. Local video imports require `ffmpeg.exe`
+and `ffprobe.exe` on `PATH`; without them, the interface reports that the
+codec cannot be prepared. Neither package contains local state,
+Steam media, audit screenshots, or development dependencies.

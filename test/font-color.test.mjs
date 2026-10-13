@@ -15,6 +15,7 @@ test('accepts a six-digit font color and automatic mode only', () => {
 
 test('injected text colors are reversible and controlled from both interfaces', () => {
   const script = buildInjectionScript({ fontColor: '#A1b2C3' });
+  assert.match(script, /initialConfig\.pluginVersion \|\| 'development'/);
   assert.match(script, /--color-text-primary/);
   assert.match(script, /'--color-text': 1/);
   assert.match(script, /'--color-text-secondary': 0\.74/);

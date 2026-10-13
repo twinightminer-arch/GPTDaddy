@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 
 const root = resolve(process.cwd());
 const version = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
-const runtime = join(root, 'dist', `runtime-v${version}`);
+const runtime = resolve(process.env.GPTDADDY_SMOKE_RUNTIME || join(root, 'dist', `runtime-v${version}`));
 const dataRoot = mkdtempSync(join(root, '.gptdaddy-bundle-smoke-'));
 const reserve = createServer();
 await new Promise((done) => reserve.listen(0, '127.0.0.1', done));
