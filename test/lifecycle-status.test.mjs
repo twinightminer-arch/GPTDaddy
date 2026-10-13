@@ -24,3 +24,11 @@ test('status requires matching source and recent presented frames', () => {
   manager.clients.get('target').lastMetrics.presentedCallbacks = 0;
   assert.equal(manager.status().playbackHealthy, false);
 });
+
+test('image readiness does not pretend to prove animation frames', () => {
+  const manager = new WallpaperLifecycleManager();
+  manager.config = { sourceToken: 'image-a' };
+  manager.clients.set('target', { lastMetrics: { installed: true, sourceUrl: 'image-a', mediaKind: 'image', readyState: 4, paused: false, presentedCallbacks: 1, lastFrameAgeMs: 0 } });
+  assert.equal(manager.status().imageReady, true);
+  assert.equal(manager.status().playbackHealthy, false);
+});

@@ -1,4 +1,8 @@
 import { execFileSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 const DISCOVERY_SCRIPT = `
 $ErrorActionPreference='Stop'
@@ -32,6 +36,18 @@ export function detectCodexWindows() {
       encoding: 'utf8', windowsHide: true, timeout: 8000,
     });
     return JSON.parse(output.trim());
+  } catch (error) {
+    return { installed: false, running: false, discoveryError: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+export async function detectCodexWindowsAsync() {
+  if (process.platform !== 'win32') return { installed: false, running: false, unsupportedPlatform: true };
+  try {
+    const { stdout } = await execFileAsync('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', DISCOVERY_SCRIPT], {
+      encoding: 'utf8', windowsHide: true, timeout: 8000, maxBuffer: 64 * 1024,
+    });
+    return JSON.parse(stdout.trim().replace(/^\uFEFF/, ''));
   } catch (error) {
     return { installed: false, running: false, discoveryError: error instanceof Error ? error.message : String(error) };
   }

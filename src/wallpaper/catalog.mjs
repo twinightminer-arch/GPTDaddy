@@ -58,9 +58,17 @@ function safeFile(root, relativePath) {
   return isPathInside(root, candidate) && existsSync(candidate) ? candidate : null;
 }
 
-export function readProject(projectRoot, source = 'workshop') {
+export function readProject(projectRoot, source = 'workshop', cached = null) {
   const metadataFile = join(projectRoot, 'project.json');
   if (!existsSync(metadataFile)) return null;
+  let metadataStat;
+  try { metadataStat = statSync(metadataFile); } catch { return null; }
+  let cachedMediaStat = null;
+  try { if (cached?.playablePath) cachedMediaStat = statSync(cached.playablePath); } catch { /* stale entry */ }
+  if (cached?.metadataMtimeMs === metadataStat.mtimeMs &&
+      cached?.projectRoot === projectRoot &&
+      (!cached.playablePath || cachedMediaStat?.mtimeMs === cached.mediaMtimeMs) &&
+      (!cached.previewPath || existsSync(cached.previewPath))) return cached;
   let metadata;
   try { metadata = JSON.parse(readFileSync(metadataFile, 'utf8')); } catch { return null; }
   const type = String(metadata.type || '').toLowerCase();
@@ -79,6 +87,7 @@ export function readProject(projectRoot, source = 'workshop') {
     playablePath = null;
   }
   const id = source === 'workshop' ? basename(projectRoot) : `local:${basename(projectRoot)}`;
+  const playableStat = playablePath ? statSync(playablePath) : null;
   return {
     id,
     title: String(metadata.title || id),
@@ -91,7 +100,9 @@ export function readProject(projectRoot, source = 'workshop') {
     playablePath,
     contentRating: String(metadata.contentrating || 'Unknown'),
     tags: Array.isArray(metadata.tags) ? metadata.tags : [],
-    bytes: playablePath ? statSync(playablePath).size : 0,
+    bytes: playableStat?.size || 0,
+    metadataMtimeMs: metadataStat.mtimeMs,
+    mediaMtimeMs: playableStat?.mtimeMs || null,
   };
 }
 
@@ -101,16 +112,17 @@ function projectDirectories(root) {
   catch { return []; }
 }
 
-export function enumerateWallpaperSources({ libraryDirs = discoverSteamLibraries(), extraRoots = [] } = {}) {
+export function enumerateWallpaperSources({ libraryDirs = discoverSteamLibraries(), extraRoots = [], previous = [] } = {}) {
   const rows = [];
   const visited = new Set();
+  const cached = new Map(previous.map((item) => [item.projectRoot, item]));
   for (const library of libraryDirs) {
     const workshop = join(library, 'steamapps', 'workshop', 'content', '431960');
     for (const projectRoot of projectDirectories(workshop)) {
       const resolved = resolve(projectRoot).toLowerCase();
       if (visited.has(resolved)) continue;
       visited.add(resolved);
-      const project = readProject(projectRoot, 'workshop');
+      const project = readProject(projectRoot, 'workshop', cached.get(projectRoot));
       if (project) rows.push(project);
     }
     const local = join(library, 'steamapps', 'common', 'wallpaper_engine', 'projects', 'myprojects');
@@ -118,13 +130,13 @@ export function enumerateWallpaperSources({ libraryDirs = discoverSteamLibraries
       const resolved = resolve(projectRoot).toLowerCase();
       if (visited.has(resolved)) continue;
       visited.add(resolved);
-      const project = readProject(projectRoot, 'local');
+      const project = readProject(projectRoot, 'local', cached.get(projectRoot));
       if (project) rows.push(project);
     }
   }
   for (const root of extraRoots) {
     for (const projectRoot of projectDirectories(root)) {
-      const project = readProject(projectRoot, 'manual');
+      const project = readProject(projectRoot, 'manual', cached.get(projectRoot));
       if (project) rows.push(project);
     }
   }

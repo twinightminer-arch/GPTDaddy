@@ -2,8 +2,8 @@ import { createReadStream, statSync } from 'node:fs';
 import { extname } from 'node:path';
 
 const MIME = new Map([
-  ['.mp4', 'video/mp4'], ['.webm', 'video/webm'], ['.mov', 'video/quicktime'], ['.mkv', 'video/x-matroska'],
-  ['.gif', 'image/gif'], ['.jpg', 'image/jpeg'], ['.jpeg', 'image/jpeg'], ['.png', 'image/png'], ['.webp', 'image/webp'],
+  ['.mp4', 'video/mp4'], ['.webm', 'video/webm'], ['.mov', 'video/quicktime'], ['.m4v', 'video/x-m4v'], ['.mkv', 'video/x-matroska'],
+  ['.gif', 'image/gif'], ['.jpg', 'image/jpeg'], ['.jpeg', 'image/jpeg'], ['.png', 'image/png'], ['.webp', 'image/webp'], ['.bmp', 'image/bmp'],
 ]);
 
 export function parseRange(rangeHeader, size) {

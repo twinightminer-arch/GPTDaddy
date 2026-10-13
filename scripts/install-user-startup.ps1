@@ -40,7 +40,7 @@ if ($Install) {
   } catch [System.Security.SecurityException] {
     throw 'Windows denied the registry write. Run scripts\install-user-startup.cmd once from a normal desktop session, outside the Codex sandbox.'
   }
-  Write-Host 'GPTDaddy user startup registration installed. It starts at next user logon; it cannot enable CDP in a normally launched production Codex.' -ForegroundColor Green
+  Write-Host 'GPTDaddy user startup registration installed. It starts at next user logon; optional package activation handles verified newly launched Codex instances without CDP.' -ForegroundColor Green
 } else {
   if ($current -and $current -ne $command) { throw 'The existing GPTDaddy startup command is different; refusing to remove it.' }
   Remove-ItemProperty -Path $runKey -Name $valueName -ErrorAction SilentlyContinue

@@ -1,0 +1,37 @@
+#ifndef AppVersion
+  #error AppVersion must be passed by the build script
+#endif
+
+[Setup]
+AppId={{6B4A27CB-47CB-4A30-8D6C-606F937C3058}
+AppName=GPTDaddy
+AppVersion={#AppVersion}
+AppPublisher=GPTDaddy Contributors
+DefaultDirName={localappdata}\Programs\GPTDaddy
+UsePreviousAppDir=no
+DefaultGroupName=GPTDaddy
+DisableProgramGroupPage=yes
+PrivilegesRequired=lowest
+Compression=lzma2
+SolidCompression=yes
+OutputDir=..\dist
+OutputBaseFilename=GPTDaddy-{#AppVersion}-Setup
+UninstallDisplayIcon={app}\node.exe
+CloseApplications=yes
+RestartApplications=no
+
+[Tasks]
+Name: desktopicon; Description: "创建 GPTDaddy 控制面板桌面快捷方式"; GroupDescription: "附加快捷方式："; Flags: unchecked
+
+[Files]
+Source: "..\dist\runtime-v{#AppVersion}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+
+[Icons]
+Name: "{group}\GPTDaddy 控制面板"; Filename: "http://127.0.0.1:34873/"
+Name: "{userdesktop}\GPTDaddy 控制面板"; Filename: "http://127.0.0.1:34873/"; Tasks: desktopicon
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "GPTDaddy"; ValueData: """{sys}\WindowsPowerShell\v1.0\powershell.exe"" -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy RemoteSigned -File ""{app}\scripts\runtime-daemon.ps1"""; Flags: uninsdeletevalue
+
+[Run]
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy RemoteSigned -File ""{app}\scripts\runtime-daemon.ps1"""; Description: "启动 GPTDaddy 后台服务"; Flags: nowait postinstall skipifsilent runhidden

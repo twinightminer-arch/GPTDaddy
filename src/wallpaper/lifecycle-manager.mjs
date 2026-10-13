@@ -5,7 +5,7 @@ import { open, stat } from 'node:fs/promises';
 import { extname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-const VIDEO_MIME = new Map([['.mp4', 'video/mp4'], ['.webm', 'video/webm'], ['.mov', 'video/quicktime'], ['.mkv', 'video/x-matroska']]);
+const VIDEO_MIME = new Map([['.mp4', 'video/mp4'], ['.webm', 'video/webm'], ['.mov', 'video/quicktime'], ['.m4v', 'video/x-m4v'], ['.mkv', 'video/x-matroska'], ['.png', 'image/png'], ['.jpg', 'image/jpeg'], ['.jpeg', 'image/jpeg'], ['.gif', 'image/gif'], ['.webp', 'image/webp'], ['.bmp', 'image/bmp']]);
 
 export class WallpaperLifecycleManager {
   constructor({ port = 9222, portProvider = null, listTargets = listCodexTargets, logger = console, targetPollMs = 1000, controlHandler = null } = {}) {
@@ -38,6 +38,7 @@ export class WallpaperLifecycleManager {
     this.reconciling = true;
     try {
       const discoveredPort = this.portProvider ? await this.portProvider() : this.port;
+      if (!this.running) return;
       if (!Number.isInteger(discoveredPort) || discoveredPort < 1 || discoveredPort > 65535) {
         this.#disconnectAll();
         this.activePort = null;
@@ -84,14 +85,16 @@ export class WallpaperLifecycleManager {
       client.close();
       throw error;
     }
-    const entry = { client, scriptId: null, lastMetrics: null, target, installPromise: Promise.resolve() };
+    const entry = { client, scriptId: null, lastMetrics: null, target, installPromise: Promise.resolve(), pendingControls: 0 };
     this.clients.set(target.id, entry);
     client.onClose(() => {
       if (this.clients.get(target.id)?.client === client) this.clients.delete(target.id);
     });
     client.onEvent((event) => {
       if (event.method === 'Runtime.bindingCalled' && event.params?.name === '__gptDaddyDesktopControl') {
-        void this.#handleControl(entry, event.params.payload, event.params.executionContextId);
+        entry.pendingControls += 1;
+        void this.#handleControl(entry, event.params.payload, event.params.executionContextId)
+          .finally(() => { entry.pendingControls = Math.max(0, entry.pendingControls - 1); });
       }
       if (event.method === 'Page.loadEventFired' && this.config) {
         const generation = this.applyGeneration;
@@ -106,8 +109,9 @@ export class WallpaperLifecycleManager {
   async #handleControl(entry, rawPayload, executionContextId) {
     let id = null;
     try {
-      if (typeof rawPayload !== 'string' || rawPayload.length > 4096) throw new Error('Invalid control request');
+      if (typeof rawPayload !== 'string' || rawPayload.length > 100000) throw new Error('Invalid control request');
       const request = JSON.parse(rawPayload);
+      if (request.action !== 'importChunk' && rawPayload.length > 4096) throw new Error('Control request is too large');
       id = request.id;
       if (!Number.isInteger(id) || id < 1 || id > 1e9) throw new Error('Invalid request identifier');
       if (!Number.isInteger(executionContextId)) throw new Error('Unverified control context');
@@ -160,7 +164,7 @@ export class WallpaperLifecycleManager {
     const beginResult = await entry.client.call('Runtime.evaluate', { expression: begin, returnByValue: true });
     if (beginResult.result?.value === false) return;
     const handle = await open(videoPath, 'r');
-    const chunk = Buffer.allocUnsafe(256 * 1024);
+    const chunk = Buffer.allocUnsafe(128 * 1024);
     let position = 0;
     try {
       while (position < fileStat.size) {
@@ -170,6 +174,10 @@ export class WallpaperLifecycleManager {
         position += bytesRead;
         const push = `window.__gptDaddyWallpaperControllerV1.pushBlob(${JSON.stringify(token)},${JSON.stringify(chunk.subarray(0, bytesRead).toString('base64'))})`;
         await entry.client.call('Runtime.evaluate', { expression: push, returnByValue: true });
+        const waitStarted = Date.now();
+        while (entry.pendingControls > 0 && Date.now() - waitStarted < 5000) {
+          await new Promise((resolve) => setTimeout(resolve, 25));
+        }
       }
     } finally {
       await handle.close();
@@ -228,8 +236,9 @@ export class WallpaperLifecycleManager {
     const metrics = [...this.clients.values()].map((entry) => entry.lastMetrics);
     const sourceToken = this.config?.sourceToken;
     const active = Boolean(sourceToken && metrics.some((item) => item?.installed && item.sourceUrl === sourceToken));
+    const imageReady = active && metrics.some((item) => item?.sourceUrl === sourceToken && item.mediaKind === 'image' && item.readyState >= 2);
     const playbackHealthy = active && metrics.some((item) =>
-      item?.installed && item.sourceUrl === sourceToken && !item.paused &&
+      item?.installed && item.mediaKind !== 'image' && item.sourceUrl === sourceToken && !item.paused &&
       item.readyState >= 2 && item.presentedCallbacks > 0 &&
       item.lastFrameAgeMs !== null && item.lastFrameAgeMs < 5000);
     return {
@@ -240,6 +249,7 @@ export class WallpaperLifecycleManager {
       lastError: this.lastError,
       desired: Boolean(this.config),
       active,
+      imageReady,
       playbackHealthy,
       metrics,
     };

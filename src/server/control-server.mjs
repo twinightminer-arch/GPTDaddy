@@ -4,7 +4,7 @@ import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveMedia } from './media.mjs';
 
-const PUBLIC_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'public');
+const PUBLIC_ROOT = process.env.GPTDADDY_PUBLIC_ROOT || join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'public');
 const STATIC_TYPES = new Map([['.html', 'text/html; charset=utf-8'], ['.js', 'text/javascript; charset=utf-8'], ['.css', 'text/css; charset=utf-8']]);
 
 function sendJson(res, status, body) {
@@ -30,7 +30,7 @@ function isAuthorized(req, url, token) {
 }
 
 export function createControlServer({ token, wallpapers, actions, host = '127.0.0.1', port = 34873 }) {
-  const byId = new Map(wallpapers.map((item) => [item.id, item]));
+  const currentWallpapers = typeof wallpapers === 'function' ? wallpapers : () => wallpapers;
   const server = createServer(async (req, res) => {
     const url = new URL(req.url || '/', `http://${host}:${port}`);
     try {
@@ -49,14 +49,15 @@ export function createControlServer({ token, wallpapers, actions, host = '127.0.
       if (!isAuthorized(req, url, token)) { sendJson(res, 401, { error: 'Unauthorized' }); return; }
       if (url.pathname.startsWith('/media/')) {
         const id = decodeURIComponent(url.pathname.slice('/media/'.length));
-        const project = byId.get(id);
-        if (!project?.playablePath) { res.writeHead(404).end('Not found'); return; }
-        serveMedia(req, res, project.playablePath);
+        const project = currentWallpapers().find((item) => item.id === id);
+        const mediaPath = url.searchParams.has('preview') ? project?.previewPath : project?.playablePath;
+        if (!mediaPath) { res.writeHead(404).end('Not found'); return; }
+        serveMedia(req, res, mediaPath);
         return;
       }
       if (req.method === 'GET' && url.pathname === '/api/status') { sendJson(res, 200, await actions.status()); return; }
       if (req.method === 'GET' && url.pathname === '/api/wallpapers') {
-        sendJson(res, 200, wallpapers.map(({ projectRoot, filePath, previewPath, playablePath, ...safe }) => safe));
+        sendJson(res, 200, currentWallpapers().map(({ projectRoot, filePath, previewPath, playablePath, ...safe }) => ({ ...safe, hasPreview: Boolean(previewPath) })));
         return;
       }
       if (req.method === 'POST' && url.pathname === '/api/apply') {
@@ -64,7 +65,33 @@ export function createControlServer({ token, wallpapers, actions, host = '127.0.
         sendJson(res, 200, await actions.apply(String(body.id || ''), body.settings || {}));
         return;
       }
+      if (req.method === 'POST' && url.pathname === '/api/import') {
+        const name = decodeURIComponent(String(req.headers['x-gptdaddy-filename'] || ''));
+        sendJson(res, 200, await actions.import(req, name));
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/api/rename-import') {
+        const body = await readJson(req);
+        sendJson(res, 200, await actions.renameImport(body.id, body.title));
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/api/delete-import') {
+        const body = await readJson(req);
+        sendJson(res, 200, await actions.deleteImport(body.id));
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/api/default') {
+        const body = await readJson(req);
+        sendJson(res, 200, await actions.setDefault(body.id));
+        return;
+      }
       if (req.method === 'POST' && url.pathname === '/api/settings') { sendJson(res, 200, await actions.settings(await readJson(req))); return; }
+      if (req.method === 'POST' && url.pathname === '/api/ui') { sendJson(res, 200, await actions.ui(await readJson(req))); return; }
+      if (req.method === 'POST' && url.pathname === '/api/native-restart') {
+        const body = await readJson(req);
+        sendJson(res, 200, await actions.nativeRestart(body.enabled));
+        return;
+      }
       if (req.method === 'POST' && url.pathname === '/api/pause') { sendJson(res, 200, await actions.pause()); return; }
       if (req.method === 'POST' && url.pathname === '/api/resume') { sendJson(res, 200, await actions.resume()); return; }
       if (req.method === 'POST' && url.pathname === '/api/remove') { sendJson(res, 200, await actions.remove()); return; }
@@ -81,7 +108,7 @@ export function createControlServer({ token, wallpapers, actions, host = '127.0.
     }),
     close: () => new Promise((resolve) => server.close(resolve)),
     mediaUrl(id, version = 0) {
-      if (!byId.has(id)) throw new Error(`Unknown wallpaper: ${id}`);
+      if (!currentWallpapers().some((item) => item.id === id)) throw new Error(`Unknown wallpaper: ${id}`);
       return `http://${host}:${port}/media/${encodeURIComponent(id)}?token=${encodeURIComponent(token)}&v=${version}`;
     },
   };

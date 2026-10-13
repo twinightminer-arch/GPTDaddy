@@ -4,4 +4,6 @@ dist/
 work/
 *.log
 .gptdaddy-test/
+.gptdaddy-*-test-*/
+.gptdaddy-bundle-smoke-*/
 

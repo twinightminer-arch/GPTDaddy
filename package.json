@@ -1,6 +1,6 @@
 {
   "name": "gptdaddy",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "private": true,
   "description": "A safe, reversible enhancement companion for the official Codex Windows desktop app.",
   "type": "module",
@@ -11,9 +11,13 @@
   "scripts": {
     "start": "node src/cli.mjs daemon",
     "doctor": "node src/cli.mjs doctor",
+    "audit:launch": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit-codex-launch.ps1",
     "package:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-windows.ps1",
     "list": "node src/cli.mjs list",
     "test": "node --test test/*.test.mjs",
     "verify": "node --check src/cli.mjs && node --check src/daemon.mjs && node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
   }
 }

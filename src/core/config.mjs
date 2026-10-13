@@ -3,15 +3,18 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-export const DEFAULT_DATA_ROOT = join(process.env.LOCALAPPDATA || tmpdir(), 'GPTDaddy');
+export const DEFAULT_DATA_ROOT = process.env.GPTDADDY_DATA_ROOT || join(process.env.LOCALAPPDATA || tmpdir(), 'GPTDaddy');
 
 export function defaultState() {
   return {
     schemaVersion: 1,
     apiToken: randomBytes(32).toString('hex'),
+    nativeRestart: { enabled: true },
+    ui: { pageColor: '#101820' },
     wallpaper: {
       enabled: false,
       id: null,
+      defaultId: null,
       opacity: 0.72,
       scrimOpacity: 0.2,
       blurPx: 12,
@@ -34,6 +37,8 @@ export function readState(file = join(DEFAULT_DATA_ROOT, 'state.json')) {
       ...base,
       ...parsed,
       apiToken: typeof parsed.apiToken === 'string' && parsed.apiToken.length >= 32 ? parsed.apiToken : base.apiToken,
+      nativeRestart: { ...base.nativeRestart, ...(parsed.nativeRestart || {}) },
+      ui: { ...base.ui, ...(parsed.ui || {}) },
       wallpaper: { ...base.wallpaper, ...(parsed.wallpaper || {}) },
     };
   } catch {

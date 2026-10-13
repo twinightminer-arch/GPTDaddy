@@ -2,7 +2,7 @@ import { buildInappPanelScript } from './inapp-panel.mjs';
 
 async function installWallpaperHost(initialConfig) {
   const GLOBAL_KEY = '__gptDaddyWallpaperControllerV1';
-  const CONTROLLER_VERSION = '0.1.8';
+  const CONTROLLER_VERSION = '0.2.0';
   const HOST_ID = 'gptdaddy-wallpaper-host';
   const STYLE_ID = 'gptdaddy-wallpaper-style';
 
@@ -16,6 +16,8 @@ async function installWallpaperHost(initialConfig) {
     config: { ...initialConfig },
     activeVideo: null,
     standbyVideo: null,
+    activeImage: null,
+    standbyImage: null,
     desiredPlaying: true,
     pausedByHost: false,
     lastFrameAt: 0,
@@ -108,7 +110,7 @@ async function installWallpaperHost(initialConfig) {
     chromeOriginals.clear();
   }
   function applyChromeFontColor() {
-    markPermissionMenus();
+    markSpecialSurfaces();
     const color = state.config.fontColor;
     if (typeof color !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(color)) {
       restoreChromeFontColor();
@@ -129,13 +131,33 @@ async function installWallpaperHost(initialConfig) {
     }
   }
 
-  function markPermissionMenus() {
+  function markSpecialSurfaces() {
     for (const menu of document.querySelectorAll('[role="menu"][aria-labelledby]')) {
       const trigger = document.getElementById(menu.getAttribute('aria-labelledby'));
       if (trigger?.getAttribute('data-composer-navigation-target') === 'permissions') {
         menu.setAttribute('data-gptdaddy-permissions-menu', '');
       } else {
         menu.removeAttribute('data-gptdaddy-permissions-menu');
+      }
+      if (trigger?.getAttribute('aria-label') === '打开个人资料菜单' || trigger?.closest('[data-gptdaddy-profile-menu]')) {
+        menu.setAttribute('data-gptdaddy-profile-menu', '');
+      } else {
+        menu.removeAttribute('data-gptdaddy-profile-menu');
+      }
+    }
+    for (const shell of document.querySelectorAll('#root [class^="_shell_"]')) {
+      const row = shell.querySelector('[class^="_headerRow_"]');
+      const title = row?.querySelector('h1,h2')?.textContent?.trim() || row?.innerText?.trim().split('\n')[0];
+      if (title === '资料库' || title === '插件' || title === '技能') shell.setAttribute('data-gptdaddy-flat-header', '');
+      else shell.removeAttribute('data-gptdaddy-flat-header');
+    }
+    for (const dialog of document.querySelectorAll('.codex-dialog')) {
+      const fullAccessTitle = dialog.matches('[role="dialog"]') && /(?:完整|完全)访问权限|full access/i.test(dialog.querySelector('h2')?.textContent || '');
+      dialog.toggleAttribute('data-gptdaddy-full-access-confirm', fullAccessTitle);
+      if (dialog.textContent?.includes('编辑个人资料') && dialog.querySelector('[class^="_surface_"]')) {
+        dialog.setAttribute('data-gptdaddy-profile-editor', '');
+      } else {
+        dialog.removeAttribute('data-gptdaddy-profile-editor');
       }
     }
   }
@@ -165,6 +187,17 @@ async function installWallpaperHost(initialConfig) {
       background-color: rgb(var(--gptdaddy-surface-rgb, 248 250 253) / .88) !important;
       backdrop-filter: blur(18px) saturate(1.12) !important;
     }
+    html[data-gptdaddy-composer-color] [role="menu"][data-gptdaddy-profile-menu] {
+      background-color: var(--gptdaddy-composer-surface) !important;
+      color: var(--gptdaddy-composer-ink) !important;
+      backdrop-filter: none !important;
+    }
+    html[data-gptdaddy-composer-color] [role="menu"][data-gptdaddy-profile-menu] :is([role="menuitem"], button, span, svg) {
+      color: var(--gptdaddy-composer-ink) !important;
+    }
+    html[data-gptdaddy-composer-color] [role="menu"][data-gptdaddy-profile-menu] :is([role="menuitem"]:hover, [role="menuitem"][data-highlighted]) {
+      background-color: color-mix(in srgb, var(--gptdaddy-composer-ink) 10%, transparent) !important;
+    }
     html[data-gptdaddy-font-color] :is([role="menu"], [data-radix-popper-content-wrapper] > [role="dialog"]) :is(button, [role="menuitem"], [role="option"], span, svg) {
       color: var(--gptdaddy-font-color) !important;
     }
@@ -179,6 +212,58 @@ async function installWallpaperHost(initialConfig) {
     }
     html[data-gptdaddy-composer-color] #root :is([class*="ComposerLayoutRoot"], [data-composer-utility-bar-variant="home"] [class*="ComposerLayoutBody"]) {
       background-color: var(--gptdaddy-composer-surface) !important;
+    }
+    html[data-gptdaddy-composer-color] #root [class~="group/home-composer-layout"] [class*="_rail_"]:has(> [class~="bg-background-composer-action-bar"]),
+    html[data-gptdaddy-composer-color] #root [class~="group/home-composer-layout"] [class~="bg-background-composer-action-bar"] {
+      background-color: var(--gptdaddy-composer-surface) !important;
+      border-radius: 22px 22px 0 0 !important;
+    }
+    html[data-gptdaddy-composer-color] #root [class~="group/home-composer-layout"] [class*="_rail_"]:has(> [class~="bg-background-composer-action-bar"]) {
+      margin-inline: 0 !important;
+    }
+    html[data-gptdaddy-composer-color] #root [class~="group/home-composer-layout"] [class*="ComposerLayoutRoot"] {
+      background-color: transparent !important;
+    }
+    html[data-gptdaddy-composer-color] #root [class~="group/home-composer-layout"] [class~="bg-background-composer-action-bar"] :is(button, span, svg) {
+      color: var(--gptdaddy-composer-ink) !important;
+    }
+    html[data-gptdaddy-composer-color] #root [class~="group/home-composer-layout"] [class*="ComposerLayoutBody"] .ProseMirror .placeholder {
+      color: color-mix(in srgb, var(--gptdaddy-composer-ink) 72%, transparent) !important;
+    }
+    html[data-gptdaddy-composer-color] #root [class~="group/profile-section"] [class*="_showcaseEmptyState_"],
+    html[data-gptdaddy-composer-color] [data-gptdaddy-profile-editor] [class^="_surface_"] {
+      background-color: var(--gptdaddy-composer-surface) !important;
+      color: var(--gptdaddy-composer-ink) !important;
+    }
+    html[data-gptdaddy-composer-color] #root [class~="group/profile-section"] [class*="_showcaseEmptyState_"] :is(div, span, p, button, label),
+    html[data-gptdaddy-composer-color] [data-gptdaddy-profile-editor] [class^="_surface_"] :is(div, span, p, button, label) {
+      color: var(--gptdaddy-composer-ink) !important;
+    }
+    .codex-dialog[role="dialog"][data-gptdaddy-full-access-confirm] {
+      background-color: var(--gptdaddy-composer-surface, var(--color-surface-elevated-secondary, #edf8ff)) !important;
+      background-image: none !important;
+      color: var(--gptdaddy-confirm-ink, #18334f) !important;
+      backdrop-filter: none !important;
+      border-radius: 24px !important;
+    }
+    .codex-dialog[role="dialog"][data-gptdaddy-full-access-confirm] :is(h2, p, span, div, button, a, label) {
+      color: var(--gptdaddy-confirm-ink, #18334f) !important;
+      text-shadow: none !important;
+    }
+    #root [class~="group/settings"] [class*="after:inset-x-4"][class*="rounded-2xl"][class*="overflow-hidden"],
+    #root [class~="group/settings"] [class*="ring-border-subtle"][class*="rounded-2xl"][class*="overflow-hidden"],
+    #root [class~="group/settings"] [class*="after:inset-x-4"][class*="rounded-2xl"][class*="overflow-visible"] {
+      background-color: transparent !important;
+      backdrop-filter: none !important;
+      border-color: transparent !important;
+      box-shadow: none !important;
+    }
+    #root [class~="group/settings"] :is(section, label, p, span, button) {
+      text-shadow: 0 1px 3px rgb(0 0 0 / .65);
+    }
+    #root [data-gptdaddy-flat-header]::before {
+      background: transparent !important;
+      opacity: 0 !important;
     }
     html[data-gptdaddy-composer-contrast] [class*="ComposerTopMenuShell"] :is(button, span, [role="option"]),
     html[data-gptdaddy-composer-contrast] [role="menu"][data-gptdaddy-permissions-menu] :is(button, span, [role="menuitem"]),
@@ -203,6 +288,23 @@ async function installWallpaperHost(initialConfig) {
     html[data-gptdaddy-font-color] #root aside :is(p, a, span, h1, h2, h3) {
       color: var(--gptdaddy-font-color) !important;
     }
+    #root [class~="group/settings"] :is(button, input, textarea, select)[class~="bg-primary-soft-alpha"],
+    #root [class~="group/settings"] :is(button, input, textarea, select)[class~="bg-primary-soft"],
+    #root [class~="group/settings"] :is(button, input, textarea, select)[class~="bg-primary-soft-alpha"] :is(span, div),
+    #root [class~="group/settings"] :is(button, input, textarea, select)[class~="bg-primary-soft"] :is(span, div) {
+      color: #18334f !important;
+      text-shadow: none !important;
+    }
+    #root [class~="group/settings"] :is(input, textarea)[class~="bg-primary-soft-alpha"]::placeholder,
+    #root [class~="group/settings"] :is(input, textarea)[class~="bg-primary-soft"]::placeholder {
+      color: rgb(24 51 79 / .65) !important;
+    }
+    html[data-gptdaddy-composer-color] body [role="menu"][data-gptdaddy-profile-menu] :is([role="menuitem"], button, div, span, svg),
+    html[data-gptdaddy-composer-color] #root [class~="group/profile-section"] [class*="_showcaseEmptyState_"] :is(div, span, p, button, label),
+    html[data-gptdaddy-composer-color] body [data-gptdaddy-profile-editor] [class^="_surface_"] :is(div, span, p, button, label) {
+      color: var(--gptdaddy-composer-ink) !important;
+      text-shadow: none !important;
+    }
     #${HOST_ID} { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; background: #090b0f; }
     #${HOST_ID} .gptdaddy-media { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; transition: opacity 260ms ease; }
     #${HOST_ID} .gptdaddy-scrim { position: absolute; inset: 0; pointer-events: none; }
@@ -211,7 +313,7 @@ async function installWallpaperHost(initialConfig) {
   const host = document.createElement('div');
   host.id = HOST_ID;
   host.setAttribute('aria-hidden', 'true');
-  host.dataset.gptdaddyVersion = '0.1.0';
+  host.dataset.gptdaddyVersion = initialConfig.pluginVersion || CONTROLLER_VERSION;
   const shadow = host.attachShadow({ mode: 'open' });
   const shadowStyle = document.createElement('style');
   shadowStyle.textContent = `
@@ -222,6 +324,8 @@ async function installWallpaperHost(initialConfig) {
   `;
   const mediaA = document.createElement('video');
   const mediaB = document.createElement('video');
+  const imageA = document.createElement('img');
+  const imageB = document.createElement('img');
   const scrim = document.createElement('div');
   mediaA.className = 'visible';
   scrim.className = 'scrim';
@@ -232,9 +336,10 @@ async function installWallpaperHost(initialConfig) {
     video.preload = 'auto';
     video.disablePictureInPicture = true;
   }
-  shadow.append(shadowStyle, mediaA, mediaB, scrim);
+  shadow.append(shadowStyle, mediaA, mediaB, imageA, imageB, scrim);
   state.activeVideo = mediaA;
   state.standbyVideo = mediaB;
+  state.standbyImage = imageA;
 
   function ensureAttached() {
     if (!document.head?.contains(style)) document.head?.append(style);
@@ -284,30 +389,35 @@ async function installWallpaperHost(initialConfig) {
       document.documentElement.setAttribute('data-gptdaddy-composer-color', '');
       document.documentElement.style.setProperty('--gptdaddy-composer-surface', composerColor);
       const fontColor = config.fontColor;
-      const contrast = typeof fontColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(fontColor)
-        ? contrastRatio(fontColor, composerColor) : 4.5;
+      const preferredInk = typeof fontColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(fontColor) ? fontColor : '#18334f';
+      const contrast = contrastRatio(preferredInk, composerColor);
+      const fallbackInk = contrastRatio('#18334f', composerColor) > contrastRatio('#ffffff', composerColor) ? '#18334f' : '#ffffff';
+      document.documentElement.style.setProperty('--gptdaddy-composer-ink', contrast < 4.5 ? fallbackInk : preferredInk);
+      const confirmInk = contrastRatio(preferredInk, composerColor) >= 4.5 ? preferredInk
+        : contrastRatio('#18334f', composerColor) >= 4.5 ? '#18334f'
+          : contrastRatio('#000000', composerColor) > contrastRatio('#ffffff', composerColor) ? '#000000' : '#ffffff';
+      document.documentElement.style.setProperty('--gptdaddy-confirm-ink', confirmInk);
       if (contrast < 4.5) {
         document.documentElement.setAttribute('data-gptdaddy-composer-contrast', '');
-        document.documentElement.style.setProperty('--gptdaddy-composer-ink', contrastRatio('#18334f', composerColor) > contrastRatio('#ffffff', composerColor) ? '#18334f' : '#ffffff');
       } else {
         document.documentElement.removeAttribute('data-gptdaddy-composer-contrast');
-        document.documentElement.style.removeProperty('--gptdaddy-composer-ink');
       }
     } else {
       document.documentElement.removeAttribute('data-gptdaddy-composer-color');
       document.documentElement.style.removeProperty('--gptdaddy-composer-surface');
       document.documentElement.removeAttribute('data-gptdaddy-composer-contrast');
       document.documentElement.style.removeProperty('--gptdaddy-composer-ink');
+      document.documentElement.style.removeProperty('--gptdaddy-confirm-ink');
     }
     updateThemeSurface();
     applyFontColor();
     host.style.filter = `blur(${Number(config.blurPx ?? 0)}px)`;
     const transform = `scale(${Number(config.zoom ?? 100) / 100})`;
-    for (const video of [mediaA, mediaB]) {
-      video.muted = config.muted !== false;
-      video.style.objectFit = config.fit || 'cover';
-      video.style.objectPosition = `${Number(config.positionX ?? 50)}% ${Number(config.positionY ?? 50)}%`;
-      video.style.transform = transform;
+    for (const media of [mediaA, mediaB, imageA, imageB]) {
+      if (media.tagName === 'VIDEO') media.muted = config.muted !== false;
+      media.style.objectFit = config.fit || 'cover';
+      media.style.objectPosition = `${Number(config.positionX ?? 50)}% ${Number(config.positionY ?? 50)}%`;
+      media.style.transform = transform;
     }
     scrim.style.background = `rgba(0,0,0,${Number(config.scrimOpacity ?? 0.2)})`;
   }
@@ -352,44 +462,52 @@ async function installWallpaperHost(initialConfig) {
     video.requestVideoFrameCallback(onFrame);
   }
 
-  async function swapSource(sourceUrl, sourceToken = sourceUrl, ownedBlobUrl = null) {
-    if (!sourceUrl || state.activeVideo.dataset.sourceToken === sourceToken) return;
-    const incoming = state.standbyVideo;
-    const outgoing = state.activeVideo;
+  async function swapSource(sourceUrl, sourceToken = sourceUrl, ownedBlobUrl = null, kind = 'video') {
+    if (!sourceUrl || (state.activeImage || state.activeVideo)?.dataset.sourceToken === sourceToken) return;
+    const image = kind === 'image';
+    const incoming = image ? state.standbyImage : state.standbyVideo;
+    const outgoing = state.activeImage || state.activeVideo;
     incoming.classList.remove('visible');
     incoming.dataset.source = sourceUrl;
     incoming.dataset.sourceToken = sourceToken;
     if (ownedBlobUrl) incoming.dataset.blobUrl = ownedBlobUrl;
-    incoming.src = sourceUrl;
-    incoming.currentTime = 0;
-    incoming.load();
-    await new Promise((resolve, reject) => {
+    const ready = new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('Wallpaper media load timed out')), 15000);
-      incoming.addEventListener('canplay', () => { clearTimeout(timer); resolve(); }, { once: true });
+      incoming.addEventListener(image ? 'load' : 'canplay', () => { clearTimeout(timer); resolve(); }, { once: true });
       incoming.addEventListener('error', () => { clearTimeout(timer); reject(new Error('Wallpaper media failed to load')); }, { once: true });
     });
-    if (state.desiredPlaying && !state.pausedByHost) await incoming.play();
+    incoming.src = sourceUrl;
+    if (!image) { incoming.currentTime = 0; incoming.load(); }
+    await ready;
+    if (!image && state.desiredPlaying && !state.pausedByHost) await incoming.play();
     incoming.classList.add('visible');
     outgoing.classList.remove('visible');
     setTimeout(() => {
-      if (outgoing === state.activeVideo) return;
-      outgoing.pause();
+      if (outgoing === state.activeVideo || outgoing === state.activeImage) return;
+      if (outgoing.tagName === 'VIDEO') outgoing.pause();
       outgoing.removeAttribute('src');
-      outgoing.load();
+      if (outgoing.tagName === 'VIDEO') outgoing.load();
       if (outgoing.dataset.blobUrl) URL.revokeObjectURL(outgoing.dataset.blobUrl);
       delete outgoing.dataset.source;
       delete outgoing.dataset.sourceToken;
       delete outgoing.dataset.blobUrl;
     }, 320);
-    state.activeVideo = incoming;
-    state.standbyVideo = outgoing;
+    if (image) {
+      state.activeImage = incoming;
+      state.activeVideo = null;
+      state.standbyImage = incoming === imageA ? imageB : imageA;
+    } else {
+      state.activeVideo = incoming;
+      state.activeImage = null;
+      state.standbyVideo = incoming === mediaA ? mediaB : mediaA;
+    }
     state.lastFrameAt = 0;
     state.presentedCallbacks = 0;
     state.sourceLoadedAt = performance.now();
     state.lastAdvanceAt = performance.now();
-    state.lastMediaTime = incoming.currentTime;
+    state.lastMediaTime = image ? 0 : incoming.currentTime;
     state.sourceChanges += 1;
-    armFrameTelemetry(incoming);
+    if (!image) armFrameTelemetry(incoming);
   }
 
   async function recoverFrozenVideo(now) {
@@ -473,7 +591,7 @@ async function installWallpaperHost(initialConfig) {
       return this.snapshot();
     },
     beginBlob(token, totalBytes, mime = 'video/mp4') {
-      if (state.activeVideo?.dataset.sourceToken === token) return false;
+      if ((state.activeImage || state.activeVideo)?.dataset.sourceToken === token) return false;
       state.transfer = { token, totalBytes, mime, received: 0, chunks: [] };
       return true;
     },
@@ -493,7 +611,7 @@ async function installWallpaperHost(initialConfig) {
       state.transfer = null;
       const blobUrl = URL.createObjectURL(new Blob(transfer.chunks, { type: transfer.mime }));
       transfer.chunks.length = 0;
-      try { await swapSource(blobUrl, token, blobUrl); }
+      try { await swapSource(blobUrl, token, blobUrl, transfer.mime.startsWith('image/') ? 'image' : 'video'); }
       catch (error) { URL.revokeObjectURL(blobUrl); throw error; }
       return this.snapshot();
     },
@@ -510,17 +628,19 @@ async function installWallpaperHost(initialConfig) {
     },
     snapshot() {
       const video = state.activeVideo;
+      const image = state.activeImage;
       const quality = video?.getVideoPlaybackQuality?.();
       return {
         installed: host.isConnected,
-        sourceUrl: video?.dataset.sourceToken || null,
+        sourceUrl: (image || video)?.dataset.sourceToken || null,
+        mediaKind: image ? 'image' : 'video',
         currentTime: video?.currentTime || 0,
-        paused: video?.paused ?? true,
-        readyState: video?.readyState ?? 0,
+        paused: image ? false : video?.paused ?? true,
+        readyState: image ? (image.complete && image.naturalWidth ? 4 : 0) : video?.readyState ?? 0,
         presentedFrames: quality?.totalVideoFrames ?? null,
-        presentedCallbacks: state.presentedCallbacks,
+        presentedCallbacks: image ? (image.complete && image.naturalWidth ? 1 : 0) : state.presentedCallbacks,
         droppedFrames: quality?.droppedVideoFrames ?? null,
-        lastFrameAgeMs: state.lastFrameAt ? Math.round(performance.now() - state.lastFrameAt) : null,
+        lastFrameAgeMs: image ? 0 : state.lastFrameAt ? Math.round(performance.now() - state.lastFrameAt) : null,
         recoveryAttempts: state.recoveryAttempts,
         freezes: state.freezes,
         sourceChanges: state.sourceChanges,
@@ -536,8 +656,13 @@ async function installWallpaperHost(initialConfig) {
       clearTimeout(chromeTimer);
       restoreChromeFontColor();
       for (const menu of document.querySelectorAll('[data-gptdaddy-permissions-menu]')) menu.removeAttribute('data-gptdaddy-permissions-menu');
+      for (const menu of document.querySelectorAll('[data-gptdaddy-profile-menu]')) menu.removeAttribute('data-gptdaddy-profile-menu');
+      for (const shell of document.querySelectorAll('[data-gptdaddy-flat-header]')) shell.removeAttribute('data-gptdaddy-flat-header');
+      for (const dialog of document.querySelectorAll('[data-gptdaddy-profile-editor]')) dialog.removeAttribute('data-gptdaddy-profile-editor');
+      for (const dialog of document.querySelectorAll('[data-gptdaddy-full-access-confirm]')) dialog.removeAttribute('data-gptdaddy-full-access-confirm');
       for (const video of [mediaA, mediaB]) { video.pause(); video.removeAttribute('src'); video.load(); }
-      for (const video of [mediaA, mediaB]) if (video.dataset.blobUrl) URL.revokeObjectURL(video.dataset.blobUrl);
+      for (const image of [imageA, imageB]) image.removeAttribute('src');
+      for (const media of [mediaA, mediaB, imageA, imageB]) if (media.dataset.blobUrl) URL.revokeObjectURL(media.dataset.blobUrl);
       style.remove();
       host.remove();
       document.documentElement.style.removeProperty('--gptdaddy-panel-opacity');
@@ -546,6 +671,7 @@ async function installWallpaperHost(initialConfig) {
       document.documentElement.style.removeProperty('--gptdaddy-composer-surface');
       document.documentElement.removeAttribute('data-gptdaddy-composer-contrast');
       document.documentElement.style.removeProperty('--gptdaddy-composer-ink');
+      document.documentElement.style.removeProperty('--gptdaddy-confirm-ink');
       document.documentElement.style.removeProperty('--gptdaddy-surface-rgb');
       document.documentElement.removeAttribute('data-gptdaddy-font-color');
       document.documentElement.style.removeProperty('--gptdaddy-font-color');
