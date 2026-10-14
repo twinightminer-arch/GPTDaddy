@@ -1,13 +1,13 @@
 # GPTDaddy
 
 GPTDaddy is a Windows companion for the official OpenAI Codex desktop app. The
-current 0.2.1 milestone adds local wallpaper imports, cached startup, and theme
-controls to a persistent Wallpaper Engine background.
+current 0.2.1 release adds local wallpaper imports, cached startup, theme
+controls, and bounded recovery across normal Codex restarts.
 
-This is a **preview**, not a finished native-startup wallpaper plugin. A
-verified package activation restored the wallpaper without adding a second
-taskbar icon. Automatic recovery has been observed on this machine, but the
-native startup splash appears before CDP attachment and cannot yet be styled.
+The verified package-activation path restored the wallpaper without adding a
+second taskbar icon. The native startup splash still appears before CDP
+attachment and cannot yet be styled; this limitation is not hidden by the
+release label.
 
 ## Current MVP
 
@@ -27,7 +27,10 @@ native startup splash appears before CDP attachment and cannot yet be styled.
 - Includes an optional, bounded package-activation recovery for a newly launched
   verified Codex process without CDP. It asks Codex to quit normally and opens
   the same official package with loopback CDP; an existing process is never
-  restarted just because GPTDaddy started, and a failed attempt is not looped.
+  restarted merely because GPTDaddy started. If the window is not ready, it
+  retries with a cooldown; a failure blocks only that process, not later Codex
+  launches. Process creation time distinguishes a newly launched instance from
+  a reused Windows PID.
 - Exposes a Chinese-first visual control panel on `127.0.0.1`.
 - Adds a draggable in-app floating control panel when the verified Codex CDP
   connection is available. Its status, library and settings use the same daemon
@@ -107,6 +110,10 @@ authors, original links and license information are also recorded in
 `GPTDaddy-0.2.1-Setup.exe` installs a bundled Node runtime and registers the
 per-user GPTDaddy daemon for Windows sign-in. It adds only GPTDaddy control-panel
 shortcuts; it does not replace or unpin the official Codex shortcut.
+On install or upgrade, it takes over the GPTDaddy loopback listener only after
+verifying the old daemon and runner belong to GPTDaddy, then checks that the
+new installed runtime owns the listener. Codex processes are never terminated
+by this installer step.
 `GPTDaddy-0.2.1-Portable.zip` contains the same runtime for manual use.
 Both use `%LOCALAPPDATA%\GPTDaddy` for settings and imported media, separate
 from the installation directory, so an update does not erase those files.

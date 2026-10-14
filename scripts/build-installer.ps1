@@ -7,6 +7,11 @@ $runtime = Join-Path $root "dist\runtime-v$version"
 if (-not (Test-Path -LiteralPath (Join-Path $runtime 'main.mjs'))) { throw 'Build the runtime first' }
 $iscc = Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe'
 if (-not (Test-Path -LiteralPath $iscc)) {
+  # Codex sandbox sessions can remap LOCALAPPDATA; the compiler still belongs
+  # to the real Windows user profile and is read-only for this build.
+  $iscc = Join-Path $env:USERPROFILE 'AppData\Local\Programs\Inno Setup 6\ISCC.exe'
+}
+if (-not (Test-Path -LiteralPath $iscc)) {
   $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
 }
 if (-not (Test-Path -LiteralPath $iscc)) { throw 'Inno Setup 6 compiler was not found' }

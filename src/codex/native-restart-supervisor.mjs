@@ -19,6 +19,10 @@ export function eligibleNativeLaunch(codex, wallpaperEnabled) {
     /[\\/]WindowsApps[\\/]OpenAI\.Codex_[^\\/]+[\\/]app[\\/]ChatGPT\.exe$/i.test(codex.executablePath));
 }
 
+function processIdentity(codex) {
+  return Number.isInteger(codex?.processId) ? `${codex.processId}:${codex.processStartedAt || ''}` : null;
+}
+
 export async function activateVerifiedCodex({ processId, cdpPort, reportPath }) {
   await execFileAsync('powershell.exe', [
     '-NoLogo', '-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden',
@@ -30,7 +34,7 @@ export async function activateVerifiedCodex({ processId, cdpPort, reportPath }) 
 }
 
 export class NativeRestartSupervisor {
-  constructor({ discover, activate = activateVerifiedCodex, isEnabled, reportPath, cdpPort = 9335, logger = console, pollMs = 2000, settleMs = 4000 } = {}) {
+  constructor({ discover, activate = activateVerifiedCodex, isEnabled, reportPath, cdpPort = 9335, logger = console, pollMs = 2000, settleMs = 4000, deferredRetryMs = 30000, maxDeferredAttempts = 6, initialLaunchWindowMs = 30000 } = {}) {
     this.discover = discover;
     this.activate = activate;
     this.isEnabled = isEnabled;
@@ -39,10 +43,18 @@ export class NativeRestartSupervisor {
     this.logger = logger;
     this.pollMs = pollMs;
     this.settleMs = settleMs;
+    this.deferredRetryMs = deferredRetryMs;
+    this.maxDeferredAttempts = maxDeferredAttempts;
+    this.initialLaunchWindowMs = initialLaunchWindowMs;
     this.initialPid = null;
+    this.initialKey = null;
+    this.initialPidEligible = false;
     this.candidate = null;
     this.attempted = new Set();
     this.blocked = false;
+    this.blockedPid = null;
+    this.blockedKey = null;
+    this.deferred = null;
     this.running = false;
     this.busy = false;
     this.ticking = false;
@@ -56,38 +68,72 @@ export class NativeRestartSupervisor {
     this.running = true;
     this.initializing = Promise.resolve().then(() => this.discover()).then((initial) => {
       this.initialPid = initial?.running ? initial.processId : null;
+      this.initialKey = initial?.running ? processIdentity(initial) : null;
+      const startedAt = Date.parse(initial?.processStartedAt || '');
+      this.initialPidEligible = Number.isFinite(startedAt) &&
+        Date.now() - startedAt >= 0 && Date.now() - startedAt <= this.initialLaunchWindowMs;
     }).catch((error) => this.logger.warn?.(`Initial Codex discovery failed: ${error.message}`));
     this.timer = setInterval(() => void this.tick(), this.pollMs);
     this.timer.unref?.();
   }
 
   async tick(now = Date.now()) {
-    if (!this.running || this.busy || this.blocked || this.ticking) return;
+    if (!this.running || this.busy || this.ticking) return;
     this.ticking = true;
     try {
     if (this.initializing) await this.initializing;
     const codex = await this.discover();
-    if (!eligibleNativeLaunch(codex, this.isEnabled()) || codex.processId === this.initialPid || this.attempted.has(codex.processId)) {
+    const key = processIdentity(codex);
+    if (key !== this.blockedKey) {
+      this.blocked = false;
+      this.blockedPid = null;
+      this.blockedKey = null;
+    }
+    if (this.deferred?.key !== key) this.deferred = null;
+    if (this.blocked) return;
+    if (!eligibleNativeLaunch(codex, this.isEnabled()) ||
+        (key === (this.initialKey || processIdentity({ processId: this.initialPid })) && !this.initialPidEligible) || this.attempted.has(key)) {
       this.candidate = null;
       return;
     }
-    if (this.candidate?.processId !== codex.processId) {
-      this.candidate = { processId: codex.processId, since: now };
+    if (this.deferred && now < this.deferred.retryAt) return;
+    if (this.candidate?.key !== key) {
+      this.candidate = { key, since: now };
       return;
     }
     if (now - this.candidate.since < this.settleMs) return;
-    this.attempted.add(codex.processId);
     this.candidate = null;
     this.busy = true;
     try {
       const result = await this.activate({ processId: codex.processId, cdpPort: this.cdpPort, reportPath: this.reportPath });
       this.lastResult = { result: result.result, at: result.finishedAt || new Date().toISOString(), processId: codex.processId };
-      if (result.result !== 'passed') {
+      if (result.result === 'deferred') {
+        const count = (this.deferred?.key === key ? this.deferred.count : 0) + 1;
+        if (count < this.maxDeferredAttempts) {
+          this.deferred = { key, count, retryAt: Date.now() + this.deferredRetryMs };
+          this.logger.warn?.(`Codex window is not ready; retry ${count}/${this.maxDeferredAttempts} is deferred.`);
+        } else {
+          this.attempted.add(key);
+          this.blocked = true;
+          this.blockedPid = codex.processId;
+          this.blockedKey = key;
+          this.logger.warn?.('Codex window did not become ready; no more activation attempts for this process.');
+        }
+      } else if (result.result !== 'passed') {
+        this.attempted.add(key);
         this.blocked = true;
-        this.logger.warn?.('Codex package activation failed; automatic retries are disabled until GPTDaddy restarts.');
+        this.blockedPid = codex.processId;
+        this.blockedKey = key;
+        this.logger.warn?.('Codex package activation failed; automatic retries are disabled for this process.');
+      } else {
+        this.attempted.add(key);
+        this.deferred = null;
       }
     } catch (error) {
+      this.attempted.add(key);
       this.blocked = true;
+      this.blockedPid = codex.processId;
+      this.blockedKey = key;
       this.lastResult = { result: 'error', at: new Date().toISOString(), processId: codex.processId };
       this.logger.warn?.(`Codex package activation could not complete: ${error.message}`);
     } finally {
@@ -100,7 +146,8 @@ export class NativeRestartSupervisor {
   }
 
   status() {
-    return { enabled: Boolean(this.isEnabled()), busy: this.busy, blocked: this.blocked, lastResult: this.lastResult };
+    return { enabled: Boolean(this.isEnabled()), busy: this.busy, blocked: this.blocked, blockedPid: this.blockedPid,
+      deferredAttempts: this.deferred?.count || 0, lastResult: this.lastResult };
   }
 
   stop() {

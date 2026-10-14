@@ -22,6 +22,7 @@ $cdpPort=if($p -and $p.CommandLine -match '--remote-debugging-port(?:=|\\s+)(\\d
   installLocation=$install
   running=[bool]$p
   processId=if($p){$p.ProcessId}else{$null}
+  processStartedAt=if($p){$p.CreationDate.ToString('o')}else{$null}
   executablePath=if($p){$p.ExecutablePath}else{$null}
   cdpPort=if($cdpPort -ge 1 -and $cdpPort -le 65535){$cdpPort}else{$null}
   cdpEnabled=[bool]($cdpPort -ge 1 -and $cdpPort -le 65535)

@@ -7,8 +7,9 @@ AppId={{6B4A27CB-47CB-4A30-8D6C-606F937C3058}
 AppName=GPTDaddy
 AppVersion={#AppVersion}
 AppPublisher=GPTDaddy Contributors
-DefaultDirName={localappdata}\Programs\GPTDaddy
+DefaultDirName={code:GetStableInstallDir}
 UsePreviousAppDir=no
+DisableDirPage=yes
 DefaultGroupName=GPTDaddy
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
@@ -34,4 +35,27 @@ Name: "{userdesktop}\GPTDaddy 控制面板"; Filename: "http://127.0.0.1:34873/"
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "GPTDaddy"; ValueData: """{sys}\WindowsPowerShell\v1.0\powershell.exe"" -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy RemoteSigned -File ""{app}\scripts\runtime-daemon.ps1"""; Flags: uninsdeletevalue
 
 [Run]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy RemoteSigned -File ""{app}\scripts\runtime-daemon.ps1"""; Description: "启动 GPTDaddy 后台服务"; Flags: nowait postinstall skipifsilent runhidden
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy RemoteSigned -File ""{app}\scripts\activate-installed-daemon.ps1"""; Description: "更新并启动 GPTDaddy 后台服务"; Flags: runhidden
+
+[Code]
+function GetStableInstallDir(Param: String): String;
+var
+  Profile: String;
+begin
+  Profile := GetEnv('USERPROFILE');
+  if Profile = '' then
+    RaiseException('Windows user profile is unavailable.');
+  Result := AddBackslash(Profile) + 'AppData\Local\Programs\GPTDaddy';
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ActualDir, ExpectedDir: String;
+begin
+  ActualDir := RemoveBackslashUnlessRoot(ExpandConstant('{app}'));
+  ExpectedDir := RemoveBackslashUnlessRoot(GetStableInstallDir(''));
+  if CompareText(ActualDir, ExpectedDir) <> 0 then
+    Result := 'Refusing to install GPTDaddy outside the stable per-user directory: ' + ExpectedDir
+  else
+    Result := '';
+end;

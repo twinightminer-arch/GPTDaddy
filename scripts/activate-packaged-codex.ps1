@@ -141,7 +141,13 @@ public static class GptDaddyActivation {
     }
     if ($mainWindow -eq [IntPtr]::Zero) { Start-Sleep -Milliseconds 500 }
   }
-  if ($mainWindow -eq [IntPtr]::Zero) { throw 'The verified Codex chat window and File menu were not found.' }
+  if ($mainWindow -eq [IntPtr]::Zero) {
+    # A login-started daemon can see the process before its interactive window exists.
+    # Do not close or reactivate Codex until its own Quit control is safely available.
+    $report.result = 'deferred'
+    $report.error = 'The verified Codex chat window and File menu are not ready.'
+    return
+  }
   $report.chatWindowHandle = $mainWindow.ToInt64()
   $chatRoot = [System.Windows.Automation.AutomationElement]::FromHandle($mainWindow)
   $fileMenu = $chatRoot.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $fileMenuCondition)
