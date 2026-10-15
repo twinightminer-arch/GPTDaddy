@@ -1,8 +1,9 @@
 # GPTDaddy
 
 GPTDaddy is a Windows companion for the official OpenAI Codex desktop app. The
-current 0.2.2 release improves Chat/Work switching, writing-block and code-snippet
-surfaces, and file-link contrast over dynamic wallpapers. Version 0.2.1 added
+current 0.2.2 release makes Chat/Work switching, writing blocks, code snippets,
+and file links follow the configurable composer background color, with readable
+text selected for contrast. Version 0.2.1 added
 local wallpaper imports, cached startup, theme controls, and bounded recovery
 across normal Codex restarts.
 

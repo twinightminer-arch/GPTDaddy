@@ -239,61 +239,61 @@ async function installWallpaperHost(initialConfig) {
       background-color: color-mix(in srgb, var(--gptdaddy-composer-ink) 10%, transparent) !important;
     }
     #root [data-gptdaddy-chat-work-switch] {
-      background-color: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / .88) !important;
-      border: 1px solid color-mix(in srgb, var(--gptdaddy-content-ink, #f7fafd) 22%, transparent) !important;
+      background-color: var(--gptdaddy-composer-surface, var(--color-surface-elevated-secondary, #edf8ff)) !important;
+      border: 1px solid color-mix(in srgb, var(--gptdaddy-composer-ink, #18334f) 22%, transparent) !important;
       backdrop-filter: none !important;
     }
     #root [data-gptdaddy-chat-work-switch] > [class*="bg-background-mode-toggle-track"] {
-      background-color: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / .96) !important;
+      background-color: var(--gptdaddy-composer-surface, var(--color-surface-elevated-secondary, #edf8ff)) !important;
       background-image: none !important;
     }
     #root [data-gptdaddy-chat-work-switch] > [class*="_indicator_"] {
-      background-color: color-mix(in srgb, var(--gptdaddy-content-ink, #f7fafd) 15%, rgb(var(--gptdaddy-surface-rgb, 20 23 29))) !important;
+      background-color: color-mix(in srgb, var(--gptdaddy-composer-ink, #18334f) 12%, var(--gptdaddy-composer-surface, var(--color-surface-elevated-secondary, #edf8ff))) !important;
       background-image: none !important;
     }
     #root [data-gptdaddy-chat-work-option] {
       background-color: transparent !important;
-      color: var(--gptdaddy-content-ink, #f7fafd) !important;
+      color: var(--gptdaddy-composer-ink, #18334f) !important;
     }
     #root [data-gptdaddy-chat-work-active] {
-      background-color: color-mix(in srgb, var(--gptdaddy-content-ink, #f7fafd) 19%, transparent) !important;
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gptdaddy-content-ink, #f7fafd) 18%, transparent) !important;
+      background-color: color-mix(in srgb, var(--gptdaddy-composer-ink, #18334f) 12%, transparent) !important;
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gptdaddy-composer-ink, #18334f) 18%, transparent) !important;
     }
     #root [class~="group/code-snippet"] {
-      background-color: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / .96) !important;
+      background-color: var(--gptdaddy-composer-surface, var(--color-surface-elevated-secondary, #edf8ff)) !important;
       background-image: none !important;
-      border-color: color-mix(in srgb, var(--gptdaddy-content-ink, #f7fafd) 28%, transparent) !important;
+      border-color: color-mix(in srgb, var(--gptdaddy-composer-ink, #18334f) 28%, transparent) !important;
       backdrop-filter: none !important;
     }
     #root [class~="group/code-snippet"] :is(code, pre, code span, pre span, button, button svg) {
-      color: var(--gptdaddy-content-ink, #f7fafd) !important;
+      color: var(--gptdaddy-composer-ink, #18334f) !important;
       text-shadow: none !important;
     }
     #root [class~="group/writing-block-surface"] {
-      --oai-wb-surface-primary: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / .96) !important;
-      --oai-wb-text-primary: var(--gptdaddy-content-ink, #f7fafd) !important;
+      --oai-wb-surface-primary: var(--gptdaddy-composer-surface, var(--color-surface-elevated-secondary, #edf8ff)) !important;
+      --oai-wb-text-primary: var(--gptdaddy-composer-ink, #18334f) !important;
     }
     #root [class~="group/writing-block-surface"] > [class*="oai-wb-surface-primary"],
     #root [class~="group/writing-block-surface"] header {
-      background-color: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / .96) !important;
+      background-color: var(--gptdaddy-composer-surface, var(--color-surface-elevated-secondary, #edf8ff)) !important;
       background-image: none !important;
     }
     #root [class~="group/writing-block-surface"] :is(header, .ProseMirror, .ProseMirror *, button) {
-      color: var(--gptdaddy-content-ink, #f7fafd) !important;
+      color: var(--gptdaddy-composer-ink, #18334f) !important;
       text-shadow: none !important;
     }
     #root main [data-gptdaddy-file-chip] {
-      background-color: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / .94) !important;
-      color: var(--gptdaddy-content-ink, #f7fafd) !important;
-      border: 1px solid color-mix(in srgb, var(--gptdaddy-content-ink, #f7fafd) 24%, transparent) !important;
+      background-color: var(--gptdaddy-composer-surface, var(--color-surface-elevated-secondary, #edf8ff)) !important;
+      color: var(--gptdaddy-composer-ink, #18334f) !important;
+      border: 1px solid color-mix(in srgb, var(--gptdaddy-composer-ink, #18334f) 24%, transparent) !important;
       border-radius: 8px !important;
       box-decoration-break: clone;
       overflow-wrap: anywhere;
       text-shadow: none !important;
     }
     #root main [data-gptdaddy-file-chip]:is(:hover, :focus-visible) {
-      background-color: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / 1) !important;
-      outline-color: var(--gptdaddy-content-ink, #f7fafd);
+      background-color: color-mix(in srgb, var(--gptdaddy-composer-ink, #18334f) 8%, var(--gptdaddy-composer-surface, var(--color-surface-elevated-secondary, #edf8ff))) !important;
+      outline-color: var(--gptdaddy-composer-ink, #18334f);
     }
     html[data-gptdaddy-font-color] :is([role="menu"], [data-radix-popper-content-wrapper] > [role="dialog"]) :is(button, [role="menuitem"], [role="option"], span, svg) {
       color: var(--gptdaddy-font-color) !important;
@@ -384,6 +384,11 @@ async function installWallpaperHost(initialConfig) {
     html[data-gptdaddy-font-color] #root main :is(p, h1, h2, h3, h4, h5, h6, li, blockquote) span,
     html[data-gptdaddy-font-color] #root aside :is(p, a, span, h1, h2, h3) {
       color: var(--gptdaddy-font-color) !important;
+    }
+    html[data-gptdaddy-font-color] #root main [data-gptdaddy-file-chip],
+    html[data-gptdaddy-font-color] #root main [data-gptdaddy-file-chip] :is(span, svg),
+    html[data-gptdaddy-font-color] #root [data-gptdaddy-chat-work-switch] :is(button, button span) {
+      color: var(--gptdaddy-composer-ink, #18334f) !important;
     }
     #root [class~="group/settings"] :is(button, input, textarea, select)[class~="bg-primary-soft-alpha"],
     #root [class~="group/settings"] :is(button, input, textarea, select)[class~="bg-primary-soft"],
