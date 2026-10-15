@@ -101,6 +101,7 @@ async function installWallpaperHost(initialConfig) {
     '#root [class*="app-shell-header-toolbar"] svg',
   ];
   const chromeOriginals = new Map();
+  const chatWorkClickHandlers = new Map();
   function restoreChromeFontColor() {
     for (const [element, original] of chromeOriginals) {
       if (original.value) element.style.setProperty('color', original.value, original.priority);
@@ -132,6 +133,45 @@ async function installWallpaperHost(initialConfig) {
   }
 
   function markSpecialSurfaces() {
+    const switchCandidates = [...document.querySelectorAll('#root button, #root [role="tab"]')]
+      .filter((element) => /^(?:聊天|工作|Chat|Work)$/.test(element.textContent?.trim() || ''));
+    for (const option of switchCandidates) {
+      const container = option.parentElement;
+      if (!container) continue;
+      const buttons = [...container.children].filter((child) => switchCandidates.includes(child));
+      const labels = new Set(buttons.map((button) => button.textContent?.trim()));
+      const isPair = buttons.length === 2 &&
+        ((labels.has('聊天') && labels.has('工作')) || (labels.has('Chat') && labels.has('Work')));
+      const bounds = container.getBoundingClientRect();
+      if (!isPair || bounds.width > 460 || bounds.height > 120) continue;
+      const isSelected = (button) => button.getAttribute('aria-selected') === 'true' ||
+        button.getAttribute('aria-pressed') === 'true' || button.getAttribute('aria-checked') === 'true' ||
+        button.getAttribute('data-state') === 'active' ||
+        (button.hasAttribute('data-selected') && button.getAttribute('data-selected') !== 'false');
+      const brightness = (button) => {
+        const channels = getComputedStyle(button).backgroundColor.match(/[\d.]+/g)?.map(Number) || [];
+        return channels.length >= 3 ? channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722 : -1;
+      };
+      const active = buttons.find(isSelected) || buttons.toSorted((a, b) => brightness(b) - brightness(a))[0];
+      if (container.hasAttribute('data-gptdaddy-chat-work-switch')) {
+        for (const button of buttons) button.toggleAttribute('data-gptdaddy-chat-work-active', button === active);
+        continue;
+      }
+      container.setAttribute('data-gptdaddy-chat-work-switch', '');
+      for (const button of buttons) {
+        button.setAttribute('data-gptdaddy-chat-work-option', '');
+        button.toggleAttribute('data-gptdaddy-chat-work-active', button === active);
+        const handler = () => {
+          for (const sibling of buttons) sibling.toggleAttribute('data-gptdaddy-chat-work-active', sibling === button);
+        };
+        button.addEventListener('click', handler);
+        chatWorkClickHandlers.set(button, handler);
+      }
+    }
+    const filePattern = /\.(?:docx?|pdf|xlsx?|pptx?|txt|md|png|jpe?g|webp|gif|svg|zip|mjs|js|ts|tsx)(?:\s|$)|^[a-z]:[\\/]|^\\\\|^file:/i;
+    for (const chip of document.querySelectorAll('#root main [class*="_Mention_"], #root main [class*="_FileLink_"]')) {
+      chip.toggleAttribute('data-gptdaddy-file-chip', filePattern.test(chip.textContent?.trim() || ''));
+    }
     for (const menu of document.querySelectorAll('[role="menu"][aria-labelledby]')) {
       const trigger = document.getElementById(menu.getAttribute('aria-labelledby'));
       if (trigger?.getAttribute('data-composer-navigation-target') === 'permissions') {
@@ -197,6 +237,63 @@ async function installWallpaperHost(initialConfig) {
     }
     html[data-gptdaddy-composer-color] [role="menu"][data-gptdaddy-profile-menu] :is([role="menuitem"]:hover, [role="menuitem"][data-highlighted]) {
       background-color: color-mix(in srgb, var(--gptdaddy-composer-ink) 10%, transparent) !important;
+    }
+    #root [data-gptdaddy-chat-work-switch] {
+      background-color: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / .88) !important;
+      border: 1px solid color-mix(in srgb, var(--gptdaddy-content-ink, #f7fafd) 22%, transparent) !important;
+      backdrop-filter: none !important;
+    }
+    #root [data-gptdaddy-chat-work-switch] > [class*="bg-background-mode-toggle-track"] {
+      background-color: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / .96) !important;
+      background-image: none !important;
+    }
+    #root [data-gptdaddy-chat-work-switch] > [class*="_indicator_"] {
+      background-color: color-mix(in srgb, var(--gptdaddy-content-ink, #f7fafd) 15%, rgb(var(--gptdaddy-surface-rgb, 20 23 29))) !important;
+      background-image: none !important;
+    }
+    #root [data-gptdaddy-chat-work-option] {
+      background-color: transparent !important;
+      color: var(--gptdaddy-content-ink, #f7fafd) !important;
+    }
+    #root [data-gptdaddy-chat-work-active] {
+      background-color: color-mix(in srgb, var(--gptdaddy-content-ink, #f7fafd) 19%, transparent) !important;
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gptdaddy-content-ink, #f7fafd) 18%, transparent) !important;
+    }
+    #root [class~="group/code-snippet"] {
+      background-color: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / .96) !important;
+      background-image: none !important;
+      border-color: color-mix(in srgb, var(--gptdaddy-content-ink, #f7fafd) 28%, transparent) !important;
+      backdrop-filter: none !important;
+    }
+    #root [class~="group/code-snippet"] :is(code, pre, code span, pre span, button, button svg) {
+      color: var(--gptdaddy-content-ink, #f7fafd) !important;
+      text-shadow: none !important;
+    }
+    #root [class~="group/writing-block-surface"] {
+      --oai-wb-surface-primary: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / .96) !important;
+      --oai-wb-text-primary: var(--gptdaddy-content-ink, #f7fafd) !important;
+    }
+    #root [class~="group/writing-block-surface"] > [class*="oai-wb-surface-primary"],
+    #root [class~="group/writing-block-surface"] header {
+      background-color: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / .96) !important;
+      background-image: none !important;
+    }
+    #root [class~="group/writing-block-surface"] :is(header, .ProseMirror, .ProseMirror *, button) {
+      color: var(--gptdaddy-content-ink, #f7fafd) !important;
+      text-shadow: none !important;
+    }
+    #root main [data-gptdaddy-file-chip] {
+      background-color: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / .94) !important;
+      color: var(--gptdaddy-content-ink, #f7fafd) !important;
+      border: 1px solid color-mix(in srgb, var(--gptdaddy-content-ink, #f7fafd) 24%, transparent) !important;
+      border-radius: 8px !important;
+      box-decoration-break: clone;
+      overflow-wrap: anywhere;
+      text-shadow: none !important;
+    }
+    #root main [data-gptdaddy-file-chip]:is(:hover, :focus-visible) {
+      background-color: rgb(var(--gptdaddy-surface-rgb, 20 23 29) / 1) !important;
+      outline-color: var(--gptdaddy-content-ink, #f7fafd);
     }
     html[data-gptdaddy-font-color] :is([role="menu"], [data-radix-popper-content-wrapper] > [role="dialog"]) :is(button, [role="menuitem"], [role="option"], span, svg) {
       color: var(--gptdaddy-font-color) !important;
@@ -433,6 +530,7 @@ async function installWallpaperHost(initialConfig) {
   }
 
   let surfaceRgb = '';
+  let contentInk = '';
   function updateThemeSurface() {
     const rootStyle = getComputedStyle(document.documentElement);
     const colorScheme = rootStyle.colorScheme;
@@ -444,9 +542,16 @@ async function installWallpaperHost(initialConfig) {
     const darkSurface = custom ? textBrightness > 140 : (colorScheme.includes('dark') && !colorScheme.includes('light') || textBrightness > 140);
     const next = darkSurface
       ? '20 23 29' : '248 250 253';
+    const preferredInk = typeof custom === 'string' && /^#[0-9a-fA-F]{6}$/.test(custom) &&
+      contrastRatio(custom, darkSurface ? '#14171d' : '#f8fafd') >= 4.5
+      ? custom : darkSurface ? '#f7fafd' : '#18334f';
     if (next !== surfaceRgb) {
       surfaceRgb = next;
       document.documentElement.style.setProperty('--gptdaddy-surface-rgb', next);
+    }
+    if (preferredInk !== contentInk) {
+      contentInk = preferredInk;
+      document.documentElement.style.setProperty('--gptdaddy-content-ink', preferredInk);
     }
   }
 
@@ -655,6 +760,14 @@ async function installWallpaperHost(initialConfig) {
       chromeObserver.disconnect();
       clearTimeout(chromeTimer);
       restoreChromeFontColor();
+      for (const [button, handler] of chatWorkClickHandlers) button.removeEventListener('click', handler);
+      chatWorkClickHandlers.clear();
+      for (const element of document.querySelectorAll('[data-gptdaddy-chat-work-switch], [data-gptdaddy-chat-work-option], [data-gptdaddy-chat-work-active], [data-gptdaddy-file-chip]')) {
+        element.removeAttribute('data-gptdaddy-chat-work-switch');
+        element.removeAttribute('data-gptdaddy-chat-work-option');
+        element.removeAttribute('data-gptdaddy-chat-work-active');
+        element.removeAttribute('data-gptdaddy-file-chip');
+      }
       for (const menu of document.querySelectorAll('[data-gptdaddy-permissions-menu]')) menu.removeAttribute('data-gptdaddy-permissions-menu');
       for (const menu of document.querySelectorAll('[data-gptdaddy-profile-menu]')) menu.removeAttribute('data-gptdaddy-profile-menu');
       for (const shell of document.querySelectorAll('[data-gptdaddy-flat-header]')) shell.removeAttribute('data-gptdaddy-flat-header');
@@ -673,6 +786,7 @@ async function installWallpaperHost(initialConfig) {
       document.documentElement.style.removeProperty('--gptdaddy-composer-ink');
       document.documentElement.style.removeProperty('--gptdaddy-confirm-ink');
       document.documentElement.style.removeProperty('--gptdaddy-surface-rgb');
+      document.documentElement.style.removeProperty('--gptdaddy-content-ink');
       document.documentElement.removeAttribute('data-gptdaddy-font-color');
       document.documentElement.style.removeProperty('--gptdaddy-font-color');
       for (const [name, original] of originalTextTokens) {

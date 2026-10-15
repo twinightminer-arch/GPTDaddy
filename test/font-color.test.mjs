@@ -51,3 +51,21 @@ test('injected text colors are reversible and controlled from both interfaces', 
   assert.match(script, /data-composer-auto/);
   assert.match(script, /settings\.composerBackgroundColor/);
 });
+
+test('chat/work switch, code snippets and file references use scoped readable surfaces', () => {
+  const script = buildInjectionScript({ pluginVersion: '0.2.2', fontColor: '#ffffff' });
+  assert.match(script, /data-gptdaddy-chat-work-switch/);
+  assert.match(script, /labels\.has\('聊天'\) && labels\.has\('工作'\)/);
+  assert.match(script, /data-gptdaddy-chat-work-active/);
+  assert.match(script, /bg-background-mode-toggle-track/);
+  assert.match(script, /_indicator_/);
+  assert.match(script, /group\/code-snippet/);
+  assert.match(script, /group\/writing-block-surface/);
+  assert.match(script, /--oai-wb-surface-primary/);
+  assert.match(script, /data-gptdaddy-file-chip/);
+  assert.match(script, /--gptdaddy-content-ink/);
+  assert.match(script, /contrastRatio\(custom, darkSurface/);
+  assert.match(script, /chatWorkClickHandlers\.clear\(\)/);
+  assert.match(script, /removeAttribute\('data-gptdaddy-file-chip'\)/);
+  assert.doesNotMatch(script, /body\s+\*\s*\{\s*background-color:/);
+});

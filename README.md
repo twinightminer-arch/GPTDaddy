@@ -1,8 +1,10 @@
 # GPTDaddy
 
 GPTDaddy is a Windows companion for the official OpenAI Codex desktop app. The
-current 0.2.1 release adds local wallpaper imports, cached startup, theme
-controls, and bounded recovery across normal Codex restarts.
+current 0.2.2 release improves Chat/Work switching, writing-block and code-snippet
+surfaces, and file-link contrast over dynamic wallpapers. Version 0.2.1 added
+local wallpaper imports, cached startup, theme controls, and bounded recovery
+across normal Codex restarts.
 
 The verified package-activation path restored the wallpaper without adding a
 second taskbar icon. The native startup splash still appears before CDP
@@ -107,14 +109,14 @@ authors, original links and license information are also recorded in
 
 ## Windows packages
 
-`GPTDaddy-0.2.1-Setup.exe` installs a bundled Node runtime and registers the
+`GPTDaddy-0.2.2-Setup.exe` installs a bundled Node runtime and registers the
 per-user GPTDaddy daemon for Windows sign-in. It adds only GPTDaddy control-panel
 shortcuts; it does not replace or unpin the official Codex shortcut.
 On install or upgrade, it takes over the GPTDaddy loopback listener only after
 verifying the old daemon and runner belong to GPTDaddy, then checks that the
 new installed runtime owns the listener. Codex processes are never terminated
 by this installer step.
-`GPTDaddy-0.2.1-Portable.zip` contains the same runtime for manual use.
+`GPTDaddy-0.2.2-Portable.zip` contains the same runtime for manual use.
 Both use `%LOCALAPPDATA%\GPTDaddy` for settings and imported media, separate
 from the installation directory, so an update does not erase those files.
 

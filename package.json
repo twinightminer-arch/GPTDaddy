@@ -1,6 +1,6 @@
 {
   "name": "gptdaddy",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "A safe, reversible enhancement companion for the official Codex Windows desktop app.",
   "type": "module",
