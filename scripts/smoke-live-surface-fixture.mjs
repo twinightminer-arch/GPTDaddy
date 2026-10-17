@@ -1,5 +1,8 @@
 import { CdpClient } from '../src/codex/cdp-client.mjs';
 import { listCodexTargets } from '../src/codex/target.mjs';
+import { readFile } from 'node:fs/promises';
+
+const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 
 const port = Number(process.argv[2]);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Pass the verified Codex CDP port');
@@ -57,7 +60,7 @@ try {
   const result = await client.call('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
   if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
   const value = result.result.value;
-  if (value.controllerVersion !== '0.2.2' || !value.before.switchMarked || !value.before.activeChat ||
+  if (value.controllerVersion !== version || !value.before.switchMarked || !value.before.activeChat ||
       !value.before.fileMarked || !value.afterClick) throw new Error(`UI fixture failed: ${JSON.stringify(value)}`);
   if (/^rgb\(237, 248, 255\)$/.test(value.before.codeBackground) ||
       /^rgb\(237, 248, 255\)$/.test(value.before.fileBackground)) throw new Error('A light surface was not replaced');

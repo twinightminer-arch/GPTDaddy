@@ -220,6 +220,10 @@ async function installWallpaperHost(initialConfig) {
     #root main .bg-gradient-to-t.from-surface {
       background-image: none !important;
     }
+    /* Codex's transcript-bottom fade sits outside <main> and above the composer. */
+    #root .thread-scroll-container > [class*="container-name:thread-content"] > .sticky.bottom-0 > .from-surface[class*="_fade_"] {
+      background-image: none !important;
+    }
     [data-radix-popper-content-wrapper] {
       backdrop-filter: none !important;
     }

@@ -34,6 +34,8 @@ test('matches wallpaper content backing to the Codex text theme', () => {
   assert.match(script, /#app-shell-sidebar > div > div/);
   assert.match(script, /MainContentTopFade/);
   assert.match(script, /\.bg-gradient-to-t\.from-surface/);
+  assert.match(script, /\.thread-scroll-container > \[class\*="container-name:thread-content"\] > \.sticky\.bottom-0 > \.from-surface\[class\*="_fade_"\]/);
+  assert.doesNotMatch(script, /\.thread-scroll-container\s*\{\s*display:\s*none/);
   assert.match(script, /backdrop-filter: blur\(var\(--gptdaddy-panel-blur, 0px\)\)/);
   assert.doesNotMatch(script, /backdrop-filter: blur\(14px\)/);
   assert.doesNotMatch(script, /backdrop-filter: blur\(16px\)/);
