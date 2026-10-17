@@ -1,5 +1,7 @@
 # GPTDaddy
 
+Since v0.2.4, the Windows installer registers a per-user scheduled watchdog that checks the GPTDaddy daemon every minute and starts the installed runner if it is missing. This keeps wallpaper recovery available after a Codex package update or an unexpected daemon exit. The watchdog does not modify the Codex package and does not force-close any process; uninstalling GPTDaddy removes the task. A Codex session that was already active before the daemon recovered is deliberately not restarted automatically, to protect ongoing work.
+
 GPTDaddy is a Windows companion for the official OpenAI Codex desktop app. The
 current 0.2.3 release removes the transcript-bottom white fade above the
 composer without hiding the scroll area or its controls. Version 0.2.2 made
