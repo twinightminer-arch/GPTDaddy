@@ -3,8 +3,10 @@
 Since v0.2.4, the Windows installer registers a per-user scheduled watchdog that checks the GPTDaddy daemon every minute and starts the installed runner if it is missing. This keeps wallpaper recovery available after a Codex package update or an unexpected daemon exit. The watchdog does not modify the Codex package and does not force-close any process; uninstalling GPTDaddy removes the task. A Codex session that was already active before the daemon recovered is deliberately not restarted automatically, to protect ongoing work.
 
 GPTDaddy is a Windows companion for the official OpenAI Codex desktop app. The
-current 0.2.3 release removes the transcript-bottom white fade above the
-composer without hiding the scroll area or its controls. Version 0.2.2 made
+current 0.2.4 release adds per-user daemon self-recovery after Codex updates
+and a verified-main-window graceful-close fallback for Codex builds whose Quit
+menu is not accessible. Version 0.2.3 removed the transcript-bottom white fade
+above the composer without hiding the scroll area or its controls. Version 0.2.2 made
 Chat/Work switching, writing blocks, code snippets, and file links follow the
 configurable composer background color, with readable text selected for
 contrast. Version 0.2.1 added
@@ -114,14 +116,15 @@ authors, original links and license information are also recorded in
 
 ## Windows packages
 
-`GPTDaddy-0.2.3-Setup.exe` installs a bundled Node runtime and registers the
-per-user GPTDaddy daemon for Windows sign-in. It adds only GPTDaddy control-panel
+`GPTDaddy-0.2.4-Setup.exe` installs a bundled Node runtime, registers the
+per-user GPTDaddy daemon for Windows sign-in, and installs a per-user scheduled
+watchdog that checks it once per minute. It adds only GPTDaddy control-panel
 shortcuts; it does not replace or unpin the official Codex shortcut.
 On install or upgrade, it takes over the GPTDaddy loopback listener only after
 verifying the old daemon and runner belong to GPTDaddy, then checks that the
 new installed runtime owns the listener. Codex processes are never terminated
 by this installer step.
-`GPTDaddy-0.2.3-Portable.zip` contains the same runtime for manual use.
+`GPTDaddy-0.2.4-Portable.zip` contains the same runtime for manual use.
 Both use `%LOCALAPPDATA%\GPTDaddy` for settings and imported media, separate
 from the installation directory, so an update does not erase those files.
 

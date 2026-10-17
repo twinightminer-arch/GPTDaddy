@@ -1,5 +1,6 @@
 import { CdpClient } from '../src/codex/cdp-client.mjs';
 import { listCodexTargets } from '../src/codex/target.mjs';
+import manifest from '../package.json' with { type: 'json' };
 
 const port = Number(process.argv[2]);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Pass the verified Codex CDP port');
@@ -32,7 +33,7 @@ try {
   const result = await cdp.call('Runtime.evaluate', { expression, returnByValue: true });
   if (result.exceptionDetails) throw new Error(result.exceptionDetails.text);
   const value = result.result?.value;
-  if (value?.controllerVersion !== '0.2.3' || value.context !== 'document' || value.backgroundImage !== 'none' ||
+  if (value?.controllerVersion !== manifest.version || value.context !== 'document' || value.backgroundImage !== 'none' ||
       value.pointerEvents !== 'none' || !value.scrollable || !value.composerPresent || !value.wallpaperPresent || !value.previewAbsent) {
     throw new Error(`Installed wallpaper validation failed: ${JSON.stringify(value)}`);
   }
