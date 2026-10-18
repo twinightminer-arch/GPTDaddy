@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { ensureState, readState, writeState } from '../src/core/config.mjs';
 
 test('persists wallpaper state and keeps a stable local API token', (context) => {
-  const directory = mkdtempSync(join(process.cwd(), '.gptdaddy-config-test-'));
+  const directory = mkdtempSync(join(tmpdir(), 'gptdaddy-config-test-'));
   context.after(() => rmSync(directory, { recursive: true, force: true }));
   const file = join(directory, 'state.json');
   const first = ensureState(file);
@@ -20,7 +21,7 @@ test('persists wallpaper state and keeps a stable local API token', (context) =>
 });
 
 test('older state receives white composer default while an explicit Codex-color choice stays intact', (context) => {
-  const directory = mkdtempSync(join(process.cwd(), '.gptdaddy-config-test-'));
+  const directory = mkdtempSync(join(tmpdir(), 'gptdaddy-config-test-'));
   context.after(() => rmSync(directory, { recursive: true, force: true }));
   const file = join(directory, 'state.json');
   writeFileSync(file, JSON.stringify({ wallpaper: { enabled: true } }));

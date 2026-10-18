@@ -41,7 +41,7 @@ test('ignores an already-running Codex and attempts a newly launched PID once', 
 });
 
 test('login-started daemon handles a Codex process created moments earlier', async () => {
-  const current = { ...codex(21), processStartedAt: new Date(Date.now() - 5000).toISOString() };
+  const current = { ...codex(21), processStartedAt: new Date(Date.now() - 45000).toISOString() };
   let count = 0;
   const supervisor = new NativeRestartSupervisor({
     discover: () => current, isEnabled: () => true,

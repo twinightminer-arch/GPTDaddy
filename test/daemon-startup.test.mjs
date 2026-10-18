@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { GPTDaddyDaemon } from '../src/daemon.mjs';
 
 test('control API starts without waiting for Windows discovery and preserves UI color', async (context) => {
-  const directory = mkdtempSync(join(process.cwd(), '.gptdaddy-start-test-'));
+  const directory = mkdtempSync(join(tmpdir(), 'gptdaddy-start-test-'));
   context.after(() => rmSync(directory, { recursive: true, force: true }));
   const daemon = new GPTDaddyDaemon({ dataRoot: directory, port: 0, wallpapers: [] });
   daemon.localStore.generatePreviews = false;

@@ -55,6 +55,18 @@ public static class GptDaddyForeground {
   [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr window);
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
+  [DllImport("user32.dll")] private static extern void keybd_event(byte key, byte scan, uint flags, UIntPtr extra);
+  public static bool QuitShortcutIfForeground(uint pid) {
+    IntPtr window = GetForegroundWindow();
+    uint owner;
+    GetWindowThreadProcessId(window, out owner);
+    if (owner != pid || !IsWindowVisible(window)) return false;
+    keybd_event(0x11, 0, 0, UIntPtr.Zero);
+    keybd_event(0x51, 0, 0, UIntPtr.Zero);
+    keybd_event(0x51, 0, 2, UIntPtr.Zero);
+    keybd_event(0x11, 0, 2, UIntPtr.Zero);
+    return true;
+  }
   public static IntPtr[] VisibleWindows(uint pid) {
     var windows = new List<IntPtr>();
     EnumWindows((window, data) => {
@@ -142,9 +154,9 @@ public static class GptDaddyActivation {
     if ($mainWindow -eq [IntPtr]::Zero) { Start-Sleep -Milliseconds 500 }
   }
   if ($mainWindow -eq [IntPtr]::Zero) {
-    # Newer Codex builds may not expose their menu through UI Automation. Use
-    # only the exact verified process's visible main window as a graceful
-    # fallback. CloseMainWindow sends WM_CLOSE; it never terminates a process.
+    # The updated native title bar does not expose the File menu to UI
+    # Automation. Its Quit shortcut may be sent only when Codex itself already
+    # owns the foreground; never steal focus or type into another application.
     $mainWindow = $process.MainWindowHandle
     if ($mainWindow -eq [IntPtr]::Zero -or
         -not ([GptDaddyForeground]::VisibleWindows([uint32]$ExpectedProcessId) -contains $mainWindow)) {
@@ -152,9 +164,13 @@ public static class GptDaddyActivation {
       $report.error = 'The verified Codex main window is not ready.'
       return
     }
-    $report.closeMethod = 'Verified Codex main window WM_CLOSE'
     $report.chatWindowHandle = $mainWindow.ToInt64()
-    if (-not $process.CloseMainWindow()) { throw 'Verified Codex main window refused WM_CLOSE; no process was stopped.' }
+    if (-not [GptDaddyForeground]::QuitShortcutIfForeground([uint32]$ExpectedProcessId)) {
+      $report.result = 'deferred'
+      $report.error = 'Codex is not the foreground window; no shortcut was sent.'
+      return
+    }
+    $report.closeMethod = 'Verified foreground Codex Ctrl+Q'
     $report.quitRequested = $true
   } else {
     $report.chatWindowHandle = $mainWindow.ToInt64()
@@ -231,19 +247,23 @@ public static class GptDaddyActivation {
   if (-not $newMain -or $newMain.ExecutablePath -ne $exe) { throw 'Activation did not yield the verified Codex executable.' }
   $report.newProcessId = $newMain.ProcessId
   $report.commandLineHasCdp = [bool]($newMain.CommandLine -match [regex]::Escape("--remote-debugging-port=$CdpPort"))
-  Start-Sleep -Seconds 10
   $statePath = Join-Path $env:LOCALAPPDATA 'GPTDaddy\state.json'
   if (Test-Path -LiteralPath $statePath) {
     $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
     $report.wallpaperEnabled = [bool]$state.wallpaper.enabled
     if ($state.apiToken) {
-      try {
-        $status = Invoke-RestMethod -Uri 'http://127.0.0.1:34873/api/status' -Headers @{
-          Authorization = "Bearer $($state.apiToken)"
-        } -TimeoutSec 5
-        $report.lifecycleActive = [bool]$status.lifecycle.active
-        $report.playbackHealthy = [bool]$status.lifecycle.playbackHealthy
-      } catch { $report.statusError = $_.Exception.Message }
+      for ($attempt = 0; $attempt -lt 30; $attempt++) {
+        Start-Sleep -Seconds 2
+        try {
+          $status = Invoke-RestMethod -Uri 'http://127.0.0.1:34873/api/status' -Headers @{
+            Authorization = "Bearer $($state.apiToken)"
+          } -TimeoutSec 3
+          $report.lifecycleActive = [bool]$status.lifecycle.active
+          $report.playbackHealthy = [bool]$status.lifecycle.playbackHealthy
+          if ($report.lifecycleActive) { break }
+        } catch { $report.statusError = $_.Exception.Message }
+        if (-not (Get-Process -Id $report.newProcessId -ErrorAction SilentlyContinue)) { break }
+      }
     }
   }
   $report.result = if ($report.commandLineHasCdp -and $report.lifecycleActive) { 'passed' } else { 'failed' }

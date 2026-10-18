@@ -15,7 +15,7 @@ $runtimeFiles = @(
   'scripts/restart-user-daemon.cmd', 'scripts/restart-user-daemon.ps1',
   'scripts/run-user-daemon.ps1',
   'scripts/activate-packaged-codex.ps1',
-  'scripts/ensure-installed-daemon.ps1', 'scripts/install-daemon-watchdog.ps1',
+  'scripts/ensure-installed-daemon.ps1', 'scripts/install-daemon-watchdog.ps1', 'scripts/start-daemon-hidden.vbs',
   'scripts/validate-live-codex.cmd', 'scripts/validate-live-codex.ps1'
 )
 $runtimeFiles += Get-ChildItem -LiteralPath (Join-Path $projectRoot 'src') -Recurse -File |

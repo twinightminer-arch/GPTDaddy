@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { Readable } from 'node:stream';
 import { LocalWallpaperStore, sniffWallpaper } from '../src/wallpaper/local-imports.mjs';
 import { readCatalogCache, writeCatalogCache } from '../src/wallpaper/catalog-cache.mjs';
@@ -23,7 +24,7 @@ test('sniffs content rather than trusting the extension', () => {
 });
 
 test('imports image and video formats into managed storage without deleting originals', async (context) => {
-  const directory = mkdtempSync(join(process.cwd(), '.gptdaddy-import-test-'));
+  const directory = mkdtempSync(join(tmpdir(), 'gptdaddy-import-test-'));
   context.after(() => rmSync(directory, { recursive: true, force: true }));
   const ffmpeg = 'C:\\ffmpeg\\bin\\ffmpeg.exe';
   const ffprobe = 'C:\\ffmpeg\\bin\\ffprobe.exe';
@@ -59,7 +60,7 @@ test('imports image and video formats into managed storage without deleting orig
 });
 
 test('catalog cache safely falls back from damage and keeps its schema', (context) => {
-  const directory = mkdtempSync(join(process.cwd(), '.gptdaddy-cache-test-'));
+  const directory = mkdtempSync(join(tmpdir(), 'gptdaddy-cache-test-'));
   context.after(() => rmSync(directory, { recursive: true, force: true }));
   const file = join(directory, 'catalog.json');
   assert.deepEqual(readCatalogCache(file), []);

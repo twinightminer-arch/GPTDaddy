@@ -34,7 +34,7 @@ export async function activateVerifiedCodex({ processId, cdpPort, reportPath }) 
 }
 
 export class NativeRestartSupervisor {
-  constructor({ discover, activate = activateVerifiedCodex, isEnabled, reportPath, cdpPort = 9335, logger = console, pollMs = 2000, settleMs = 4000, deferredRetryMs = 30000, maxDeferredAttempts = 6, initialLaunchWindowMs = 30000 } = {}) {
+  constructor({ discover, activate = activateVerifiedCodex, isEnabled, reportPath, cdpPort = 9335, logger = console, pollMs = 2000, settleMs = 4000, deferredRetryMs = 30000, maxDeferredAttempts = 6, initialLaunchWindowMs = 90000 } = {}) {
     this.discover = discover;
     this.activate = activate;
     this.isEnabled = isEnabled;
