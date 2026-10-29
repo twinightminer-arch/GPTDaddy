@@ -14,6 +14,21 @@ export function settingToUi(key, setting) {
 }
 
 function installInappPanel() {
+  // Keep these inside the serialized function. Bundlers rename module-level
+  // helpers, and Function#toString would otherwise leave dangling references.
+  const uiToSetting = (key, ui) => {
+    const value = Math.max(0, Math.min(100, Number(ui)));
+    if (key === 'opacity' || key === 'scrimOpacity') return value / 100;
+    if (key === 'blurPx') return value;
+    if (key === 'zoom') return 50 + value * 1.5;
+    return value;
+  };
+  const settingToUi = (key, setting) => {
+    const value = Number(setting);
+    const ui = key === 'opacity' || key === 'scrimOpacity' ? value * 100
+      : key === 'zoom' ? (value - 50) / 1.5 : value;
+    return Math.max(0, Math.min(100, Math.round(ui)));
+  };
   const ROOT_ID = 'gptdaddy-desktop-panel';
   const existing = document.getElementById(ROOT_ID);
   if (existing) return true;
@@ -332,5 +347,5 @@ function installInappPanel() {
 }
 
 export function buildInappPanelScript() {
-  return `(() => { const uiToSetting = ${uiToSetting.toString()}; const settingToUi = ${settingToUi.toString()}; return (${installInappPanel.toString()})(); })()`;
+  return `(${installInappPanel.toString()})();`;
 }
