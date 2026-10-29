@@ -14,6 +14,7 @@ export function settingToUi(key, setting) {
 }
 
 function installInappPanel() {
+  const PANEL_REVISION = '2026-10-29-panel-bundle-fix';
   // Keep these inside the serialized function. Bundlers rename module-level
   // helpers, and Function#toString would otherwise leave dangling references.
   const uiToSetting = (key, ui) => {
@@ -31,11 +32,16 @@ function installInappPanel() {
   };
   const ROOT_ID = 'gptdaddy-desktop-panel';
   const existing = document.getElementById(ROOT_ID);
-  if (existing) return true;
+  if (existing?.dataset.gptdaddyPanelRevision === PANEL_REVISION) return true;
+  if (existing) {
+    window.__gptDaddyRemovePanel?.();
+    existing.remove();
+  }
   if (!document.body) return false;
 
   const root = document.createElement('div');
   root.id = ROOT_ID;
+  root.dataset.gptdaddyPanelRevision = PANEL_REVISION;
   const shadow = root.attachShadow({ mode: 'open' });
   shadow.innerHTML = `
     <style>

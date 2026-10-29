@@ -12,4 +12,6 @@ test('minified in-app panel keeps its setting helpers inside the serialized func
   assert.match(opening, /scrimOpacity/);
   assert.match(opening, /zoom/);
   assert.doesNotMatch(script, /\bJt\(/);
+  assert.match(script, /2026-10-29-panel-bundle-fix/);
+  assert.match(script, /__gptDaddyRemovePanel/);
 });

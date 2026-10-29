@@ -20,7 +20,7 @@ Copy-Item -LiteralPath $node -Destination (Join-Path $out 'node.exe') -Force
 foreach ($file in @('index.html','app.js','styles.css')) {
   Copy-Item -LiteralPath (Join-Path $root "public\$file") -Destination (Join-Path $out "public\$file") -Force
 }
-foreach ($file in @('activate-packaged-codex.ps1','activate-installed-daemon.ps1','runtime-daemon.ps1','ensure-installed-daemon.ps1','install-daemon-watchdog.ps1','start-daemon-hidden.vbs')) {
+foreach ($file in @('activate-packaged-codex.ps1','activate-installed-daemon.ps1','runtime-daemon.ps1','ensure-installed-daemon.ps1','install-daemon-watchdog.ps1','install-daemon-startup.ps1','start-daemon-hidden.vbs')) {
   Copy-Item -LiteralPath (Join-Path $root "scripts\$file") -Destination (Join-Path $out "scripts\$file") -Force
 }
 foreach ($file in @('LICENSE','THIRD_PARTY_NOTICES.md','README.md')) {

@@ -54,11 +54,16 @@ if ($daemonPid) {
   if (Get-Process -Id $daemonPid -ErrorAction SilentlyContinue) { throw 'The exact old GPTDaddy daemon did not exit.' }
 }
 
-$powershell = (Get-Command powershell.exe -ErrorAction Stop).Source
-Start-Process -FilePath $powershell -ArgumentList @(
-  '-NoLogo', '-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden',
-  '-ExecutionPolicy', 'RemoteSigned', '-File', ('"' + $runner + '"')
-) -WindowStyle Hidden | Out-Null
+$startupTask = Get-ScheduledTask -TaskName 'GPTDaddy-Daemon-Startup' -ErrorAction SilentlyContinue
+if ($startupTask) {
+  Start-ScheduledTask -TaskName 'GPTDaddy-Daemon-Startup'
+} else {
+  $powershell = (Get-Command powershell.exe -ErrorAction Stop).Source
+  Start-Process -FilePath $powershell -ArgumentList @(
+    '-NoLogo', '-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden',
+    '-ExecutionPolicy', 'RemoteSigned', '-File', ('"' + $runner + '"')
+  ) -WindowStyle Hidden | Out-Null
+}
 
 $ready = $false
 for ($attempt = 0; $attempt -lt 40; $attempt++) {
