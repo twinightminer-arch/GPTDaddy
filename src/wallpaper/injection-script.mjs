@@ -314,6 +314,10 @@ async function installWallpaperHost(initialConfig) {
     html[data-gptdaddy-composer-color] #root :is([class*="ComposerLayoutRoot"], [data-composer-utility-bar-variant="home"] [class*="ComposerLayoutBody"]) {
       background-color: var(--gptdaddy-composer-surface) !important;
     }
+    html[data-gptdaddy-composer-color] #root [class*="ComposerLayoutFooter"] > [class~="bg-(--composer-layout-surface-background)"] {
+      background-color: var(--gptdaddy-composer-surface) !important;
+      color: var(--gptdaddy-composer-ink) !important;
+    }
     html[data-gptdaddy-composer-color] #root [class~="group/home-composer-layout"] [class*="_rail_"]:has(> [class~="bg-background-composer-action-bar"]),
     html[data-gptdaddy-composer-color] #root [class~="group/home-composer-layout"] [class~="bg-background-composer-action-bar"] {
       background-color: var(--gptdaddy-composer-surface) !important;
