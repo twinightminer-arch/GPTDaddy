@@ -193,11 +193,20 @@ async function installWallpaperHost(initialConfig) {
         menu.removeAttribute('data-gptdaddy-profile-menu');
       }
     }
-    for (const shell of document.querySelectorAll('#root [class^="_shell_"]')) {
-      const row = shell.querySelector('[class^="_headerRow_"]');
+    for (const shell of document.querySelectorAll('#root [class^="_shell_"], #root [class^="shell-"]')) {
+      const row = shell.querySelector('[class^="_headerRow_"], [class^="headerRow-"]');
       const title = row?.querySelector('h1,h2')?.textContent?.trim() || row?.innerText?.trim().split('\n')[0];
       if (title === '资料库' || title === '插件' || title === '技能') shell.setAttribute('data-gptdaddy-flat-header', '');
       else shell.removeAttribute('data-gptdaddy-flat-header');
+    }
+    for (const button of document.querySelectorAll('#root button')) {
+      button.toggleAttribute('data-gptdaddy-view-changes', /^(?:查看变更|View changes)$/i.test(button.textContent?.trim() || ''));
+    }
+    for (const popup of document.querySelectorAll('[role="menu"], [role="toolbar"], [data-radix-popper-content-wrapper]')) {
+      const labels = [...popup.querySelectorAll('button,[role="menuitem"]')].map((item) => item.textContent?.trim() || '');
+      popup.toggleAttribute('data-gptdaddy-selection-menu',
+        labels.some((label) => /^(?:添加到对话|Add to chat)$/.test(label)) &&
+        labels.some((label) => /^(?:在侧边聊天中提问|Ask in sidebar)$/.test(label)));
     }
     for (const dialog of document.querySelectorAll('.codex-dialog')) {
       const fullAccessTitle = dialog.matches('[role="dialog"]') && /(?:完整|完全)访问权限|full access/i.test(dialog.querySelector('h2')?.textContent || '');
@@ -400,6 +409,23 @@ async function installWallpaperHost(initialConfig) {
     #root [data-gptdaddy-flat-header]::before {
       background: transparent !important;
       opacity: 0 !important;
+    }
+    #root button[data-gptdaddy-view-changes] {
+      background-color: var(--gptdaddy-composer-surface, #edf8ff) !important;
+      color: var(--gptdaddy-composer-ink, #18334f) !important;
+      border-color: color-mix(in srgb, var(--gptdaddy-composer-ink, #18334f) 18%, transparent) !important;
+    }
+    #root button[data-gptdaddy-view-changes] :is(span, svg) {
+      color: var(--gptdaddy-composer-ink, #18334f) !important;
+    }
+    [data-gptdaddy-selection-menu] {
+      background-color: var(--gptdaddy-composer-surface, #edf8ff) !important;
+      color: var(--gptdaddy-composer-ink, #18334f) !important;
+      border-radius: 14px !important;
+      backdrop-filter: none !important;
+    }
+    [data-gptdaddy-selection-menu] :is(button, [role="menuitem"], span, svg) {
+      color: var(--gptdaddy-composer-ink, #18334f) !important;
     }
     html[data-gptdaddy-composer-contrast] [class*="ComposerTopMenuShell"] :is(button, span, [role="option"]),
     html[data-gptdaddy-composer-contrast] [role="menu"][data-gptdaddy-permissions-menu] :is(button, span, [role="menuitem"]),
@@ -818,6 +844,8 @@ async function installWallpaperHost(initialConfig) {
       for (const menu of document.querySelectorAll('[data-gptdaddy-permissions-menu]')) menu.removeAttribute('data-gptdaddy-permissions-menu');
       for (const menu of document.querySelectorAll('[data-gptdaddy-profile-menu]')) menu.removeAttribute('data-gptdaddy-profile-menu');
       for (const shell of document.querySelectorAll('[data-gptdaddy-flat-header]')) shell.removeAttribute('data-gptdaddy-flat-header');
+      for (const button of document.querySelectorAll('[data-gptdaddy-view-changes]')) button.removeAttribute('data-gptdaddy-view-changes');
+      for (const popup of document.querySelectorAll('[data-gptdaddy-selection-menu]')) popup.removeAttribute('data-gptdaddy-selection-menu');
       for (const dialog of document.querySelectorAll('[data-gptdaddy-profile-editor]')) dialog.removeAttribute('data-gptdaddy-profile-editor');
       for (const dialog of document.querySelectorAll('[data-gptdaddy-full-access-confirm]')) dialog.removeAttribute('data-gptdaddy-full-access-confirm');
       for (const video of [mediaA, mediaB]) { video.pause(); video.removeAttribute('src'); video.load(); }

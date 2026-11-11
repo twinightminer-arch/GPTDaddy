@@ -34,8 +34,11 @@ try {
       .slice(0,20).map(el=>[el,el.parentElement,el.parentElement?.parentElement].filter(Boolean).map(describe));
     const resourceNodes = [...document.querySelectorAll('#root [class*="resource-card"], #root [class*="ResourceCard"]')].slice(0,30)
       .map(el=>[el,el.parentElement,el.firstElementChild].filter(Boolean).map(describe));
+    const headerNodes = [...document.querySelectorAll('#root [class^="shell-"], #root [class^="headerRow-"]')]
+      .filter(el=>{const r=el.getBoundingClientRect();return r.width>500&&r.y<160&&r.height>10;}).slice(0,15)
+      .map(el=>[el,...el.children].filter(Boolean).slice(0,8).map(describe));
     return {viewport:[innerWidth,innerHeight],title:document.title, controller:window.__gptDaddyWallpaperControllerV1?.version,
-      host:!!document.getElementById('gptdaddy-wallpaper-host'),style:!!document.getElementById('gptdaddy-wallpaper-style'), candidates,fades,samples,switchNodes,attachmentNodes,resourceNodes};
+      host:!!document.getElementById('gptdaddy-wallpaper-host'),style:!!document.getElementById('gptdaddy-wallpaper-style'), candidates,fades,samples,switchNodes,attachmentNodes,resourceNodes,headerNodes};
   })()`;
   const result = await cdp.call('Runtime.evaluate', { expression, returnByValue: true });
   if (result.exceptionDetails) throw new Error(result.exceptionDetails.text);

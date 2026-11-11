@@ -39,6 +39,10 @@ test('matches wallpaper content backing to the Codex text theme', () => {
   assert.match(script, /\.thread-scroll-container > \[class\*="container-name:thread-content"\] > \.sticky\.bottom-0 > \.from-surface\[class\*="fade-"\]/);
   assert.match(script, /group\/summary-panel.*before:-top-2/);
   assert.match(script, /resource-card-row-padding-x/);
+  assert.match(script, /#root \[class\^="_shell_"\], #root \[class\^="shell-"\]/);
+  assert.match(script, /\[class\^="_headerRow_"\], \[class\^="headerRow-"\]/);
+  assert.match(script, /data-gptdaddy-selection-menu/);
+  assert.match(script, /data-gptdaddy-view-changes/);
   assert.doesNotMatch(script, /\.thread-scroll-container\s*\{\s*display:\s*none/);
   assert.match(script, /backdrop-filter: blur\(var\(--gptdaddy-panel-blur, 0px\)\)/);
   assert.doesNotMatch(script, /backdrop-filter: blur\(14px\)/);
