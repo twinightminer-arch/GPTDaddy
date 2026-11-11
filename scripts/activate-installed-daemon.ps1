@@ -13,10 +13,11 @@ $listeners = @(Get-NetTCPConnection -LocalAddress '127.0.0.1' -LocalPort 34873 -
 $owners = @($listeners | Select-Object -ExpandProperty OwningProcess -Unique)
 if ($owners.Count -gt 1) { throw 'Multiple processes own the GPTDaddy control listener; refusing takeover.' }
 if ($owners.Count -eq 0) {
+  $health = $null
   try {
     $health = Invoke-RestMethod -Uri 'http://127.0.0.1:34873/health' -TimeoutSec 1
-    if ($health.ok) { throw 'GPTDaddy is healthy but its listener owner could not be verified; refusing takeover.' }
-  } catch [System.Net.WebException] { }
+  } catch { }
+  if ($health -and $health.ok) { throw 'GPTDaddy is healthy but its listener owner could not be verified; refusing takeover.' }
 }
 $daemonPid = if ($owners.Count -eq 1) { [int]$owners[0] } else { 0 }
 $daemon = if ($daemonPid) { Get-CimInstance Win32_Process -Filter "ProcessId=$daemonPid" } else { $null }

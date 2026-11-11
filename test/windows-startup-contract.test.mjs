@@ -17,6 +17,8 @@ test('installer removes the periodic watchdog and registers one hidden logon tas
   assert.doesNotMatch(cleanup, /\bRegister-ScheduledTask|New-ScheduledTaskTrigger/i);
   assert.match(startup, /New-ScheduledTaskTrigger -AtLogOn/);
   assert.match(startup, /-WindowStyle Hidden/);
+  assert.match(startup, /-AllowStartIfOnBatteries -DontStopIfGoingOnBatteries/);
+  assert.match(startup, /Set-ScheduledTask -TaskName \$taskName -Settings \$settings/);
   assert.doesNotMatch(startup, /-RepetitionInterval|New-TimeSpan -Minutes 1/);
   assert.match(activate, /Start-ScheduledTask -TaskName 'GPTDaddy-Daemon-Startup'/);
   assert.match(launcher, /ensure-installed-daemon\.ps1/i);

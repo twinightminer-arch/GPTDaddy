@@ -5,6 +5,7 @@ $taskName = 'GPTDaddy-Daemon-Startup'
 $runner = Join-Path $PSScriptRoot 'runtime-daemon.ps1'
 $powershell = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $existing = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+$settings = New-ScheduledTaskSettingsSet -Hidden -ExecutionTimeLimit ([TimeSpan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 if ($existing) {
   $actions = @($existing.Actions)
   if ($actions.Count -ne 1 -or
@@ -13,6 +14,12 @@ if ($existing) {
     throw 'The startup task does not belong to this GPTDaddy installation.'
   }
   if ($Uninstall) { Unregister-ScheduledTask -TaskName $taskName -Confirm:$false }
+  else {
+    # Task Scheduler otherwise queues the daemon forever on a laptop running on battery.
+    if ($existing.Settings.DisallowStartIfOnBatteries -or $existing.Settings.StopIfGoingOnBatteries) {
+      Set-ScheduledTask -TaskName $taskName -Settings $settings | Out-Null
+    }
+  }
   exit 0
 }
 if ($Uninstall) { exit 0 }
@@ -21,5 +28,4 @@ $user = [Security.Principal.WindowsIdentity]::GetCurrent().Name
 $action = New-ScheduledTaskAction -Execute $powershell -Argument ('-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy RemoteSigned -File "' + $runner + '"')
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $user
 $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
-$settings = New-ScheduledTaskSettingsSet -Hidden -ExecutionTimeLimit ([TimeSpan]::Zero)
 Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Description 'Start GPTDaddy once per user logon without a console window' | Out-Null

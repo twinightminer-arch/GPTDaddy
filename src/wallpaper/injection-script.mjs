@@ -133,12 +133,22 @@ async function installWallpaperHost(initialConfig) {
   }
 
   function markSpecialSurfaces() {
+    for (const [button, handler] of chatWorkClickHandlers) {
+      if (!button.isConnected) {
+        button.removeEventListener('click', handler);
+        chatWorkClickHandlers.delete(button);
+      }
+    }
     const switchCandidates = [...document.querySelectorAll('#root button, #root [role="tab"]')]
       .filter((element) => /^(?:聊天|工作|Chat|Work)$/.test(element.textContent?.trim() || ''));
     for (const option of switchCandidates) {
-      const container = option.parentElement;
+      const partner = switchCandidates.find((candidate) => candidate !== option &&
+        ((/^(?:聊天|Chat)$/.test(option.textContent?.trim() || '') && /^(?:工作|Work)$/.test(candidate.textContent?.trim() || '')) ||
+         (/^(?:工作|Work)$/.test(option.textContent?.trim() || '') && /^(?:聊天|Chat)$/.test(candidate.textContent?.trim() || ''))) &&
+        candidate.parentElement === option.parentElement);
+      const container = partner ? option.parentElement : null;
       if (!container) continue;
-      const buttons = [...container.children].filter((child) => switchCandidates.includes(child));
+      const buttons = [option, partner];
       const labels = new Set(buttons.map((button) => button.textContent?.trim()));
       const isPair = buttons.length === 2 &&
         ((labels.has('聊天') && labels.has('工作')) || (labels.has('Chat') && labels.has('Work')));
@@ -152,15 +162,13 @@ async function installWallpaperHost(initialConfig) {
         const channels = getComputedStyle(button).backgroundColor.match(/[\d.]+/g)?.map(Number) || [];
         return channels.length >= 3 ? channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722 : -1;
       };
-      const active = buttons.find(isSelected) || buttons.toSorted((a, b) => brightness(b) - brightness(a))[0];
-      if (container.hasAttribute('data-gptdaddy-chat-work-switch')) {
-        for (const button of buttons) button.toggleAttribute('data-gptdaddy-chat-work-active', button === active);
-        continue;
-      }
+      const active = buttons.find(isSelected) || buttons.find((button) => button.hasAttribute('data-gptdaddy-chat-work-active')) ||
+        buttons.toSorted((a, b) => brightness(b) - brightness(a))[0];
       container.setAttribute('data-gptdaddy-chat-work-switch', '');
       for (const button of buttons) {
         button.setAttribute('data-gptdaddy-chat-work-option', '');
         button.toggleAttribute('data-gptdaddy-chat-work-active', button === active);
+        if (chatWorkClickHandlers.has(button)) continue;
         const handler = () => {
           for (const sibling of buttons) sibling.toggleAttribute('data-gptdaddy-chat-work-active', sibling === button);
         };
@@ -224,6 +232,13 @@ async function installWallpaperHost(initialConfig) {
     #root .thread-scroll-container > [class*="container-name:thread-content"] > .sticky.bottom-0 > .from-surface[class*="_fade_"] {
       background-image: none !important;
     }
+    /* Newer Codex builds use fade-* instead of _fade_* for the same scroll spacer. */
+    #root .thread-scroll-container > [class*="container-name:thread-content"] > .sticky.bottom-0 > .from-surface[class*="fade-"] {
+      background-image: none !important;
+    }
+    #root [class~="group/summary-panel"] [class*="before:-top-2"]::before {
+      background-color: transparent !important;
+    }
     [data-radix-popper-content-wrapper] {
       backdrop-filter: none !important;
     }
@@ -247,11 +262,13 @@ async function installWallpaperHost(initialConfig) {
       border: 1px solid color-mix(in srgb, var(--gptdaddy-composer-ink, #18334f) 22%, transparent) !important;
       backdrop-filter: none !important;
     }
-    #root [data-gptdaddy-chat-work-switch] > [class*="bg-background-mode-toggle-track"] {
+    #root [data-gptdaddy-chat-work-switch] [class*="bg-background-mode-toggle-track"],
+    #root [class*="bg-background-mode-toggle-track"] {
       background-color: var(--gptdaddy-composer-surface, var(--color-surface-elevated-secondary, #edf8ff)) !important;
       background-image: none !important;
     }
-    #root [data-gptdaddy-chat-work-switch] > [class*="_indicator_"] {
+    #root [data-gptdaddy-chat-work-switch] [class*="_indicator_"],
+    #root [class*="bg-background-mode-toggle-track"] ~ [class*="_indicator_"] {
       background-color: color-mix(in srgb, var(--gptdaddy-composer-ink, #18334f) 12%, var(--gptdaddy-composer-surface, var(--color-surface-elevated-secondary, #edf8ff))) !important;
       background-image: none !important;
     }
@@ -262,6 +279,20 @@ async function installWallpaperHost(initialConfig) {
     #root [data-gptdaddy-chat-work-active] {
       background-color: color-mix(in srgb, var(--gptdaddy-composer-ink, #18334f) 12%, transparent) !important;
       box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gptdaddy-composer-ink, #18334f) 18%, transparent) !important;
+    }
+    #root [data-gptdaddy-chat-work-switch] [class*="bg-background-mode-toggle-track"]::before,
+    #root [data-gptdaddy-chat-work-switch] [class*="bg-background-mode-toggle-track"]::after {
+      background-color: transparent !important;
+      background-image: none !important;
+    }
+    #root [class*="resource-card-row-padding-x"] {
+      background-color: var(--gptdaddy-composer-surface, var(--color-surface-elevated-secondary, #edf8ff)) !important;
+      color: var(--gptdaddy-composer-ink, #18334f) !important;
+      background-image: none !important;
+    }
+    #root [class*="resource-card-row-padding-x"] :is(span, button, svg) {
+      color: var(--gptdaddy-composer-ink, #18334f) !important;
+      text-shadow: none !important;
     }
     #root [class~="group/code-snippet"] {
       background-color: var(--gptdaddy-composer-surface, var(--color-surface-elevated-secondary, #edf8ff)) !important;
@@ -414,6 +445,9 @@ async function installWallpaperHost(initialConfig) {
     html[data-gptdaddy-composer-color] body [data-gptdaddy-profile-editor] [class^="_surface_"] :is(div, span, p, button, label) {
       color: var(--gptdaddy-composer-ink) !important;
       text-shadow: none !important;
+    }
+    html[data-gptdaddy-font-color] #root [class*="resource-card-row-padding-x"] :is(span, button, svg) {
+      color: var(--gptdaddy-composer-ink, #18334f) !important;
     }
     #${HOST_ID} { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; background: #090b0f; }
     #${HOST_ID} .gptdaddy-media { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; transition: opacity 260ms ease; }
