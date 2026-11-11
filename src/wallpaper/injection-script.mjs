@@ -208,6 +208,20 @@ async function installWallpaperHost(initialConfig) {
         labels.some((label) => /^(?:添加到对话|Add to chat)$/.test(label)) &&
         labels.some((label) => /^(?:在侧边聊天中提问|Ask in sidebar)$/.test(label)));
     }
+    // The selection toolbar can be a plain portal div rather than a role=menu.
+    const actions = [...document.querySelectorAll('body button, body [role="button"], body [role="menuitem"]')];
+    const addToChat = actions.find((item) => /^(?:添加到对话|Add to chat)$/.test(item.textContent?.trim() || ''));
+    const askSidebar = actions.find((item) => /^(?:在侧边聊天中提问|Ask in sidebar)$/.test(item.textContent?.trim() || ''));
+    if (addToChat && askSidebar) {
+      let surface = addToChat.parentElement;
+      for (let depth = 0; surface && depth < 6 && !surface.contains(askSidebar); depth++) surface = surface.parentElement;
+      const rect = surface?.getBoundingClientRect();
+      if (rect && rect.width > 80 && rect.width < 500 && rect.height > 20 && rect.height < 160 &&
+          (['absolute', 'fixed'].includes(getComputedStyle(surface).position) ||
+           ['absolute', 'fixed'].includes(getComputedStyle(surface.parentElement).position))) {
+        surface.setAttribute('data-gptdaddy-selection-menu', '');
+      }
+    }
     for (const dialog of document.querySelectorAll('.codex-dialog')) {
       const fullAccessTitle = dialog.matches('[role="dialog"]') && /(?:完整|完全)访问权限|full access/i.test(dialog.querySelector('h2')?.textContent || '');
       dialog.toggleAttribute('data-gptdaddy-full-access-confirm', fullAccessTitle);

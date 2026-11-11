@@ -1,6 +1,6 @@
 # GPTDaddy
 
-Version 0.2.7 adapts the Plugins/Skills header to the current Codex DOM, and scopes the text-selection menu and View changes button to the configured composer color. It is a source-only preview; the latter two controls still need post-change live visual confirmation. Version 0.2.6 updated the conversation fade, file cards, and battery startup task.
+Version 0.2.8 is a source-only retry that was also loaded into the local installed GPTDaddy runtime without an installer. It fixes the Plugins/Skills header in the live Codex window and recognizes plain floating selection toolbars as well as role-based menus. The selection toolbar and View changes button still need post-change live visual confirmation. Version 0.2.6 updated the conversation fade, file cards, and battery startup task.
 
 GPTDaddy is a Windows companion for the official OpenAI Codex desktop app. The
 0.2.5 removed the disruptive periodic watchdog while retaining a per-user daemon at sign-in. Version 0.2.4 added recovery after Codex updates
@@ -124,7 +124,7 @@ verifying the old daemon and runner belong to GPTDaddy, then checks that the
 new installed runtime owns the listener. Codex processes are never terminated
 by this installer step.
 `GPTDaddy-0.2.5-Portable.zip` contains the same runtime for manual use.
-Versions 0.2.6 and 0.2.7 are source only, at the user's request. Build locally with the scripts below if needed.
+Versions 0.2.6 through 0.2.8 are source only, at the user's request. Build locally with the scripts below if needed.
 Both use `%LOCALAPPDATA%\GPTDaddy` for settings and imported media, separate
 from the installation directory, so an update does not erase those files.
 
